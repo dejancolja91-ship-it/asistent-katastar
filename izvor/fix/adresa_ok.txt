@@ -1,0 +1,106 @@
+1|#||4|42|pageRedirect||%2feKatastarPublic%2fFindAdresaResult.aspx|1|#||4|5570|updatePanel|ContentPlaceHolder1_UpdatePanel1|
+            <div class="higlight-border-0" style="width: 500px">
+                
+
+<table style="border: 0px; margin: 0px; padding: 0px; width: 500px">
+    <tr>
+        <td class="label_cell" style="width: 120px">
+            <label for="ContentPlaceHolder1_ucAdresa_txtUlica">Улица:</label>
+        </td>
+        <td class="field_cell">
+            <input name="ctl00$ContentPlaceHolder1$ucAdresa$txtUlica" type="text" value="БЕОГРАД (ЧУКАРИЦА), ГРУЈЕ МИШКОВИЋА" maxlength="50" id="ContentPlaceHolder1_ucAdresa_txtUlica" style="width:345px;" />
+            <input type="hidden" name="ctl00$ContentPlaceHolder1$ucAdresa$hdnUlicaID" id="ContentPlaceHolder1_ucAdresa_hdnUlicaID" value="791113003725" />
+            <span id="ContentPlaceHolder1_ucAdresa_ctl01" style="display:none;"></span>
+            
+        </td>
+    </tr>
+    <tr>
+        <td class="label_cell" style="width: 120px">
+            <label for="ContentPlaceHolder1_ucAdresa_txtKucniBroj">Кућни број:</label>
+        </td>
+        <td class="field_cell">
+            <input name="ctl00$ContentPlaceHolder1$ucAdresa$txtKucniBroj" type="text" value="5" maxlength="5" id="ContentPlaceHolder1_ucAdresa_txtKucniBroj" autocomplete="off" style="width:100px;" />
+            <span id="ContentPlaceHolder1_ucAdresa_ctl03" style="display:none;"></span>
+        </td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+    function AutoCompleteStoreID(source, eventArgs) {
+        var selectedItemID = eventArgs.get_value();
+        if (selectedItemID === "-1") {
+            document.getElementById('ContentPlaceHolder1_ucAdresa_hdnUlicaID').value = "";
+        } else {
+            document.getElementById('ContentPlaceHolder1_ucAdresa_hdnUlicaID').value = selectedItemID;
+        }
+    }
+</script>
+                <table cellspacing="0" cellpadding="0" border="0" style="width: 500px">
+                    <tr>
+                        <td colspan="2" class="label_cell">
+                            
+                            Унесите код са слике:
+                            
+
+<div><svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="200" height="60" viewBox="0,0,200,60"><g stroke="silver" fill="none"><path d="M9 37 C93 45,81 30,187 43" /><path d="M3 28 C100 35,109 52,196 25" /><path d="M13 52 C98 42,96 2,195 55" /><path d="M5 35 C98 3,109 55,179 3" /><path d="M7 38 C115 2,114 19,197 45" /><path d="M17 39 C93 25,110 30,186 2" /><path d="M11 1 C106 2,120 41,191 26" /><path d="M5 23 C110 1,81 5,189 45" /><path d="M15 56 C105 56,79 35,180 51" /><path d="M1 31 C92 23,107 46,181 47" /><path d="M17 30 C95 17,90 18,189 27" /><path d="M14 15 C100 5,102 47,189 29" /><path d="M13 19 C92 52,115 32,184 23" /><path d="M20 3 C116 11,94 50,187 8" /><path d="M14 43 C98 35,107 27,197 15" /><path d="M14 46 C96 30,82 56,183 23" /></g><g fill="gray"><path d="M18.717,42.515L17.183, 30.634L21.002, 31.182L29.836, 43.722L34.804, 41.849L26.157, 31.040C33.201,29.757 33.482,27.414 34.438,24.181C34.249,17.955 28.355,15.760 22.174,15.156L14.326, 16.767L14.496, 42.930z M23.178,19.243C25.956,19.233 30.698,19.664 29.134,23.975C30.773,27.685 27.214,28.248 22.351,29.410L18.010, 28.369L17.078, 18.905z" /><path d="M49.674,43.336C57.050,43.752 60.250,39.944 60.702,31.308L60.876, 16.397L55.541, 15.467L56.268, 31.515C56.645,38.065 54.145,39.401 50.293,41.044C44.222,39.937 43.503,37.987 42.522,32.073L43.407, 15.921L38.764, 15.465L39.190, 32.405C39.519,39.140 41.253,42.760 48.880,44.266z" /><path d="M75.553,43.092C78.812,43.590 81.308,41.736 82.514,39.986L80.137, 38.338C78.963,39.325 77.265,40.249 74.716,39.674C72.923,39.656 68.633,38.823 67.870,34.697L84.297, 33.461C84.744,28.410 81.647,21.977 74.068,21.767C68.102,22.365 65.305,26.239 64.168,32.961C64.272,39.352 68.869,43.247 74.233,43.695z M74.655,25.509C78.118,24.839 80.000,27.901 79.729,31.605L68.337, 30.357C69.207,27.537 71.995,24.696 74.675,25.471z" /><path d="M89.246,41.898L93.009, 42.617L103.958, 20.210L103.796, 16.118L85.740, 16.026L85.041, 18.515L101.081, 18.611z" /><path d="M115.787,42.426C118.870,43.375 122.162,41.068 124.463,39.225L120.250, 38.066C120.728,39.383 118.550,41.225 116.438,39.448C113.244,39.552 111.246,38.482 111.346,33.451C111.158,28.856 112.497,25.965 115.233,24.759C118.219,26.614 120.900,26.094 121.364,27.886L124.329, 27.461C122.667,24.180 120.414,22.248 116.807,21.981C111.208,23.582 106.849,27.975 106.420,33.011C107.521,39.172 111.222,42.690 115.389,42.680z" /></g></svg></div>
+<div><input name="ctl00$ContentPlaceHolder1$SVGCaptchaControl$CaptchaText" type="text" value="MiUvY" id="ContentPlaceHolder1_SVGCaptchaControl_CaptchaText" /></div>
+<span id="ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator" style="display:none;"></span>
+<span id="ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator" style="display:none;"></span>
+                            <br />
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnSubmit" value="Прикажи" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnSubmit&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ContentPlaceHolder1_btnSubmit" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="ContentPlaceHolder1_ValidationSummary1" style="display:none;">
+
+</div>
+            <!-- BEGIN: Poruka -->
+            <p class="err-warning">
+                
+            </p>
+            <!-- END: Poruka -->
+        |0|hiddenField|__EVENTTARGET||0|hiddenField|__EVENTARGUMENT||3696|hiddenField|__VIEWSTATE|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|8|hiddenField|__VIEWSTATEGENERATOR|1F25AF01|328|hiddenField|__EVENTVALIDATION|Raq1CVs5uutDlVnuWJao1p0Frgz/tJoSGVI5/ntN9mrRSJ5HO2aVObTYxdszqwV3L28jLF+Crkp1E09Xc+I1Eyh+FPluG889PkiljOP+K3IkK82sThI9sVaH1SgQDQxVaO8pMnpnAWuZM1RUX2EOezA1goO6F9ccWHyo1uOt/dB1X9qxxKAYb9/dFFtFb5l7yT9YN3Z3bVm1kimI9fObvYyehspW6i0HBYrbzTIHuIGUh2M3eXeEBfdKwZC+rz/Jex9UYWKPCQQQnqqxOEApKfFraUTQI0+aZuyszSmar4j6DD6zCCTZbPxZaKqk58Xprivxlw==|0|asyncPostBackControlIDs|||0|postBackControlIDs|||72|updatePanelIDs||tctl00$ContentPlaceHolder1$UpdatePanel1,ContentPlaceHolder1_UpdatePanel1|0|childUpdatePanelIDs|||71|panelsToRefreshIDs||ctl00$ContentPlaceHolder1$UpdatePanel1,ContentPlaceHolder1_UpdatePanel1|2|asyncPostBackTimeout||90|33|formAction||./FindAdresa.aspx?OpstinaID=70254|31|pageTitle||еКатастар непокретности: Адресе|65|arrayDeclaration|Page_ValidationSummaries|document.getElementById("ContentPlaceHolder1_ValidationSummary1")|61|arrayDeclaration|Page_Validators|document.getElementById("ContentPlaceHolder1_ucAdresa_ctl01")|61|arrayDeclaration|Page_Validators|document.getElementById("ContentPlaceHolder1_ucAdresa_ctl03")|89|arrayDeclaration|Page_Validators|document.getElementById("ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator")|81|arrayDeclaration|Page_Validators|document.getElementById("ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator")|213|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=e5E1AtP3xKkZXolUhwXYdPMGtzCrw3_26ON2NkQPi5od1B7v9GWVtf79vE2SL7E0xwRflpOOl-pguZcsiAEou61SiNIzrM2LFBtQtZD3_aHxJv-BgpzUmL1qWBLJig5YYPSr6RxyHYDYACMwWAHM3H_aNak1&t=ffffffffa5405632|183|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=0DTyaqpthy1YTPdZdq65WGCzo_SYnddPAnW0lFS2XOQG2m_5jkoED_koAUFu6j0MTelsg0ZfePF8zbxvTtvui_yGWYV936Fk6EELuC7hSlM686x5xjB8UK-iStrs3IJKyZrOtw2&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=S82TnqfpL6OBqIz-BJ5_Aln6Wicb90NyvJ8ZiScn-hlSOERQx52biN1dugsV-y9-Yd64mUCvhMA2muln17-Jf0ChHN7sn_vYz1zODVkAdC_RHmQx0&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=A4U68tBQYOEI-uL9JUi8zzs_Yj7_VvbqZGA7FkH4ombaIrNIoRujXcOQKHoS3Nt7WAs9mGdZDmS_pJibIK7VNZk92vFEboWAdrhcoJdTErRZGwgZ0&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=H6eV-R1s52xPZDDQVtTNH5FK5CRAmXnQhPLqVrfEEgxNQMhYHNKh28N1FNY0eo2zuQySi3OIhC1XYdXaec213YbAyRajsrxcdFGdffU2ZPk1WPQS0&t=7d5986a|183|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=SX5lQGGXU8z-Tc7ceZWs_hSQTI7bLNcij_wgHYVZKuSo0ai9TDM3KLKvmEyr6FL_1mdkyRt37zdBUTjt14Ml2Oab4xz9yAl3h-xWbhalPd1pAEewHOuTtt7wyy-ntVixWsq4Mw2&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=wgrPVuOdNmWw-RlzZfWWs0DFt_jhCH1CCMbpCXjcceTaysv_PTBj0jQMwLn6Qvwh40h4sghPpJmQeV-GD_4mEg40O0iyiqOsBHX65w16WNApNwU00&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=ZWYSm0hU3BP6rXK9saLo-BSh9HnL5yUYK8u3XnfUWzn5NMBv9Xaz7Q3PbEM4XLK9u2csWc2_rbpmnMbrfpoX4t8xvkI-D4tIDKeGIbV8tr_n4B4r0&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=cCpWXDgbb-pa1zXY2xrZMBYonO_blcgWN1B8NJrxFyL9gb6NslcnmmCg3bbtb_VMEjOirKaRjqCrdB3Jt7RhJp_H9-dbCd7d9AiM2wWfceR2KlwA0&t=7d5986a|161|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=FlU1WtV4tz-sN6PfHrAw6c56U9vmrvVl6QHSd6NVbbYd9ludWSR-OJ_S3ubPmh2SM0o-wYx0lwg6LucMlk5iat3adLH1uZC9AYRoVrO1QYdAnqk40&t=7d5986a|281|scriptStartupBlock|ScriptContentNoTags|
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        |275|scriptStartupBlock|ScriptContentNoTags|
+(function(id) {
+    var e = document.getElementById(id);
+    if (e) {
+        e.dispose = function() {
+            Array.remove(Page_ValidationSummaries, document.getElementById(id));
+        }
+        e = null;
+    }
+})('ContentPlaceHolder1_ValidationSummary1');
+|190|scriptStartupBlock|ScriptContentNoTags|
+document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01'));
+}
+|1152|scriptStartupBlock|ScriptContentNoTags|Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.AutoCompleteBehavior, {"completionListCssClass":"AutoCompleteList","completionListItemCssClass":"AutoCompleteListItem","contextKey":"70254","delimiterCharacters":"","enableCaching":false,"firstRowSelected":true,"highlightedItemCssClass":"AutoCompleteItemHighlighted","id":"ContentPlaceHolder1_ucAdresa_AutoCompleteUlica","minimumPrefixLength":2,"onHide":"{\"AnimationName\":\"Parallel\",\"Duration\":\".4\",\"AnimationChildren\":[{\"AnimationName\":\"FadeOut\",\"AnimationChildren\":[]}]}","onShow":"{\"AnimationName\":\"Sequence\",\"AnimationChildren\":[{\"AnimationName\":\"OpacityAction\",\"Opacity\":\"0\",\"AnimationChildren\":[]},{\"AnimationName\":\"HideAction\",\"Visible\":\"true\",\"AnimationChildren\":[]},{\"AnimationName\":\"Parallel\",\"Duration\":\".4\",\"AnimationChildren\":[{\"AnimationName\":\"FadeIn\",\"AnimationChildren\":[]}]}]}","serviceMethod":"PretragaUlica","servicePath":"FindAdresa.aspx","showOnlyCurrentWordInCompletionListItem":true,"useContextKey":true}, {"itemSelected":AutoCompleteStoreID}, null, $get("ContentPlaceHolder1_ucAdresa_txtUlica"));
+});
+|190|scriptStartupBlock|ScriptContentNoTags|
+document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03'));
+}
+|246|scriptStartupBlock|ScriptContentNoTags|
+document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator'));
+}
+|230|scriptStartupBlock|ScriptContentNoTags|
+document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator'));
+}
+|90|onSubmit||if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;|39|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01')['controltovalidate']|"ContentPlaceHolder1_ucAdresa_txtUlica"|37|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01')['errormessage']|"Унесите назив или део назива улице."|6|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01')['display']|"None"|39|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01')['evaluationfunction']|"RequiredFieldValidatorEvaluateIsValid"|2|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01')['initialvalue']|""|43|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03')['controltovalidate']|"ContentPlaceHolder1_ucAdresa_txtKucniBroj"|42|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03')['errormessage']|"Унесите кућни број или део кућног броја."|6|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03')['display']|"None"|39|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03')['evaluationfunction']|"RequiredFieldValidatorEvaluateIsValid"|2|expando|document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03')['initialvalue']|""|51|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator')['controltovalidate']|"ContentPlaceHolder1_SVGCaptchaControl_CaptchaText"|23|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator')['errormessage']|"Унесите код са слике."|6|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator')['display']|"None"|39|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator')['evaluationfunction']|"RequiredFieldValidatorEvaluateIsValid"|2|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator')['initialvalue']|""|41|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator')['errormessage']|"Неисправна комбинација слова и бројева."|6|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator')['display']|"None"|32|expando|document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator')['evaluationfunction']|"CustomValidatorEvaluateIsValid"|

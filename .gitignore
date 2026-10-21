@@ -1,0 +1,34 @@
+# Asistent KATASTAR: na GitHub ide SAMO kod i pomocni fajlovi sa spiska ispod.
+# Sve ostalo (katastar.db, rezerve/, dnevnik.txt, zadaci/, izvodi/, PDF/, _prenos/, sifarnik_ko.json,
+# uzorci_captcha.json, asistent_katastar_rezerva_vN.py, izlazi testova) ostaje samo na racunaru.
+# Novi fajl koji treba da ide na GitHub dodaj ovde kao "!putanja".
+
+*
+
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/CLAUDE.md
+!/asistent_katastar.py
+!/asistent_katastar.ico
+!/asistent_katastar_ikona.png
+!/pokreni.bat
+!/napravi_precicu.bat
+!/napravi_precicu.ps1
+!/preuzmi_sa_github.bat
+!/povezi_sa_github.bat
+
+!/izvor/
+!/izvor/izvor.py
+!/izvor/napravi.py
+!/izvor/opstine.json
+!/izvor/seme_min.json
+!/izvor/mock_sajt.py
+!/izvor/ikona.py
+!/izvor/test_*.py
+!/izvor/sve_testove.sh
+!/izvor/fix/
+!/izvor/fix/*.html
+!/izvor/fix/*.txt
+!/izvor/fix/*.svg
+!/izvor/fix/*.json

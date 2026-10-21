@@ -1,0 +1,396 @@
+1|#||4|22691|updatePanel|ContentPlaceHolder1_getOpstinaKO_UpdatePanelKO|
+
+        <!-- Padajuća lista -->
+        <p class="sub_head">Изаберите општину:</p>
+        <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>
+                    <select name="ctl00$ContentPlaceHolder1$getOpstinaKO$dropOpstina" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$ContentPlaceHolder1$getOpstinaKO$dropOpstina\&#39;,\&#39;\&#39;)&#39;, 0)" id="ContentPlaceHolder1_getOpstinaKO_dropOpstina" style="width:250px;height: 22px">
+	<option value="80012">АДА</option>
+	<option value="70017">АЛЕКСАНДРОВАЦ</option>
+	<option value="70025">АЛЕКСИНАЦ</option>
+	<option value="80039">АЛИБУНАР</option>
+	<option value="80047">АПАТИН</option>
+	<option value="70033">АРАНЂЕЛОВАЦ</option>
+	<option value="70041">АРИЉЕ</option>
+	<option value="70050">БАБУШНИЦА</option>
+	<option value="70068">БАЈИНА БАШТА</option>
+	<option value="70092">БАРАЈЕВО</option>
+	<option value="70076">БАТОЧИНА</option>
+	<option value="80055">БАЧ</option>
+	<option value="80063">БАЧКА ПАЛАНКА</option>
+	<option value="80071">БАЧКА ТОПОЛА</option>
+	<option value="80080">БАЧКИ ПЕТРОВАЦ</option>
+	<option value="70084">БЕЛА ПАЛАНКА</option>
+	<option value="80098">БЕЛА ЦРКВА</option>
+	<option value="80101">БЕОЧИН</option>
+	<option value="80110">БЕЧЕЈ</option>
+	<option value="70262">БЛАЦЕ</option>
+	<option value="70289">БОГАТИЋ</option>
+	<option value="70297">БОЈНИК</option>
+	<option value="70319">БОЉЕВАЦ</option>
+	<option value="70327">БОР</option>
+	<option value="70335">БОСИЛЕГРАД</option>
+	<option value="70343">БРУС</option>
+	<option value="70351">БУЈАНОВАЦ</option>
+	<option value="70360">ВАЉЕВО</option>
+	<option value="70378">ВАРВАРИН</option>
+	<option value="70386">ВЕЛИКА ПЛАНА</option>
+	<option value="70394">ВЕЛИКО ГРАДИШТЕ</option>
+	<option value="70408">ВЛАДИМИРЦИ</option>
+	<option value="70416">ВЛАДИЧИН ХАН</option>
+	<option value="70424">ВЛАСОТИНЦЕ</option>
+	<option selected="selected" value="70106">ВОЖДОВАЦ</option>
+	<option value="70432">ВРАЊЕ</option>
+	<option value="71358">ВРАЊСКА БАЊА</option>
+	<option value="70114">ВРАЧАР</option>
+	<option value="80462">ВРБАС</option>
+	<option value="70459">ВРЊАЧКА БАЊА</option>
+	<option value="80128">ВРШАЦ</option>
+	<option value="70467">ГАЏИН ХАН</option>
+	<option value="70475">ГОЛУБАЦ</option>
+	<option value="70483">ГОРЊИ МИЛАНОВАЦ</option>
+	<option value="70122">ГРОЦКА</option>
+	<option value="70491">ДЕСПОТОВАЦ</option>
+	<option value="70505">ДИМИТРОВГРАД</option>
+	<option value="70513">ДОЉЕВАЦ</option>
+	<option value="80136">ЖАБАЉ</option>
+	<option value="70521">ЖАБАРИ</option>
+	<option value="70530">ЖАГУБИЦА</option>
+	<option value="80144">ЖИТИШТЕ</option>
+	<option value="70548">ЖИТОРАЂА</option>
+	<option value="70556">ЗАЈЕЧАР</option>
+	<option value="70149">ЗВЕЗДАРА</option>
+	<option value="70157">ЗЕМУН</option>
+	<option value="80152">ЗРЕЊАНИН</option>
+	<option value="70564">ИВАЊИЦА</option>
+	<option value="80179">ИНЂИЈА</option>
+	<option value="80187">ИРИГ</option>
+	<option value="71048">ЈАГОДИНА</option>
+	<option value="80195">КАЊИЖА</option>
+	<option value="80209">КИКИНДА</option>
+	<option value="70572">КЛАДОВО</option>
+	<option value="70599">КНИЋ</option>
+	<option value="70602">КЊАЖЕВАЦ</option>
+	<option value="80217">КОВАЧИЦА</option>
+	<option value="80225">КОВИН</option>
+	<option value="70629">КОСЈЕРИЋ</option>
+	<option value="71340">КОСТОЛАЦ</option>
+	<option value="70637">КОЦЕЉЕВА</option>
+	<option value="70645">КРАГУЈЕВАЦ</option>
+	<option value="70653">КРАЉЕВО</option>
+	<option value="70661">КРУПАЊ</option>
+	<option value="70670">КРУШЕВАЦ</option>
+	<option value="80233">КУЛА</option>
+	<option value="70688">КУРШУМЛИЈА</option>
+	<option value="70696">КУЧЕВО</option>
+	<option value="70165">ЛАЗАРЕВАЦ</option>
+	<option value="70700">ЛАЈКОВАЦ</option>
+	<option value="71277">ЛАПОВО</option>
+	<option value="70718">ЛЕБАНЕ</option>
+	<option value="70726">ЛЕСКОВАЦ</option>
+	<option value="70734">ЛОЗНИЦА</option>
+	<option value="70742">ЛУЧАНИ</option>
+	<option value="70769">ЉИГ</option>
+	<option value="70777">ЉУБОВИЈА</option>
+	<option value="70785">МАЈДАНПЕК</option>
+	<option value="70793">МАЛИ ЗВОРНИК</option>
+	<option value="80241">МАЛИ ИЂОШ</option>
+	<option value="70807">МАЛО ЦРНИЋЕ</option>
+	<option value="70815">МЕДВЕЂА</option>
+	<option value="71331">МЕДИЈАНА</option>
+	<option value="70823">МЕРОШИНА</option>
+	<option value="70831">МИОНИЦА</option>
+	<option value="70173">МЛАДЕНОВАЦ</option>
+	<option value="70840">НЕГОТИН</option>
+	<option value="71285">НИШКА БАЊА</option>
+	<option value="70866">НОВА ВАРОШ</option>
+	<option value="80250">НОВА ЦРЊА</option>
+	<option value="70181">НОВИ БЕОГРАД</option>
+	<option value="80268">НОВИ БЕЧЕЈ</option>
+	<option value="80276">НОВИ КНЕЖЕВАЦ</option>
+	<option value="70874">НОВИ ПАЗАР</option>
+	<option value="89010">НОВИ САД</option>
+	<option value="70190">ОБРЕНОВАЦ</option>
+	<option value="80292">ОПОВО</option>
+	<option value="70882">ОСЕЧИНА</option>
+	<option value="80306">ОЏАЦИ</option>
+	<option value="70203">ПАЛИЛУЛА (БЕОГРАД)</option>
+	<option value="71323">ПАЛИЛУЛА (НИШ)</option>
+	<option value="71307">ПАНТЕЛЕЈ</option>
+	<option value="80314">ПАНЧЕВО</option>
+	<option value="70904">ПАРАЋИН</option>
+	<option value="70912">ПЕТРОВАЦ НА МЛАВИ</option>
+	<option value="80322">ПЕЋИНЦИ</option>
+	<option value="70939">ПИРОТ</option>
+	<option value="80349">ПЛАНДИШТЕ</option>
+	<option value="70947">ПОЖАРЕВАЦ</option>
+	<option value="70955">ПОЖЕГА</option>
+	<option value="70963">ПРЕШЕВО</option>
+	<option value="70971">ПРИБОЈ</option>
+	<option value="70980">ПРИЈЕПОЉЕ</option>
+	<option value="70998">ПРОКУПЉЕ</option>
+	<option value="71005">РАЖАЊ</option>
+	<option value="70211">РАКОВИЦА</option>
+	<option value="71013">РАЧА</option>
+	<option value="71021">РАШКА</option>
+	<option value="71030">РЕКОВАЦ</option>
+	<option value="80357">РУМА</option>
+	<option value="70220">САВСКИ ВЕНАЦ</option>
+	<option value="71056">СВИЛАЈНАЦ</option>
+	<option value="71064">СВРЉИГ</option>
+	<option value="71366">СЕВОЈНО</option>
+	<option value="80365">СЕНТА</option>
+	<option value="80373">СЕЧАЊ</option>
+	<option value="71072">СЈЕНИЦА</option>
+	<option value="71099">СМЕДЕРЕВО</option>
+	<option value="71102">СМЕДЕРЕВСКА ПАЛАНКА</option>
+	<option value="71129">СОКОБАЊА</option>
+	<option value="80381">СОМБОР</option>
+	<option value="70238">СОПОТ</option>
+	<option value="80390">СРБОБРАН</option>
+	<option value="80403">СРЕМСКА МИТРОВИЦА</option>
+	<option value="80411">СРЕМСКИ КАРЛОВЦИ</option>
+	<option value="80420">СТАРА ПАЗОВА</option>
+	<option value="70246">СТАРИ ГРАД</option>
+	<option value="80438">СУБОТИЦА</option>
+	<option value="71137">СУРДУЛИЦА</option>
+	<option value="71293">СУРЧИН</option>
+	<option value="80446">ТЕМЕРИН</option>
+	<option value="80454">ТИТЕЛ</option>
+	<option value="71153">ТОПОЛА</option>
+	<option value="71161">ТРГОВИШТЕ</option>
+	<option value="71170">ТРСТЕНИК</option>
+	<option value="71188">ТУТИН</option>
+	<option value="71196">ЋИЋЕВАЦ</option>
+	<option value="71200">ЋУПРИЈА</option>
+	<option value="71218">УБ</option>
+	<option value="71145">УЖИЦЕ</option>
+	<option value="71315">ЦРВЕНИ КРСТ</option>
+	<option value="71226">ЦРНА ТРАВА</option>
+	<option value="71234">ЧАЈЕТИНА</option>
+	<option value="71242">ЧАЧАК</option>
+	<option value="80489">ЧОКА</option>
+	<option value="70254">ЧУКАРИЦА</option>
+	<option value="71269">ШАБАЦ</option>
+	<option value="80497">ШИД</option>
+
+</select>
+                    <span id="ContentPlaceHolder1_getOpstinaKO_reqOpstina" style="visibility:hidden;">*</span>
+                                                
+                </td>
+                <td>
+                        
+
+
+<style type="text/css">
+    div.pzContent
+    {
+        display: block;
+        width: 210px;
+        float: left;
+        border: 1px solid #D8D8D8;
+        -moz-border-radius: 5px 5px 5px 5px;
+        border-radius: 5px 5px 5px 5px;
+    }
+    div.pzContent2
+    {
+        position: relative;
+        float: left;
+        width: 200px;
+        min-height: 20px;
+        height: 20px;
+        padding: 5px 5px 5px 5px;
+    }
+    div.pzContent2:hover
+    {
+        background-color: #F0F4FD;
+        border-color: transparent;
+        border-radius: 5px 5px 5px 5px;
+    }
+</style>
+
+
+<div class="pzContent">
+    <div class="pzContent2">
+        <table width="210" cellspacing="0" cellpadding="4" border="0">
+            <tr>
+                <td style="vertical-align: top; text-align: left; width: 16px">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_ucIconTextButtonOpstina_hImage" title="Претрага објеката општине по адреси" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="" /></a>
+                </td>
+                <td style="vertical-align: top; text-align: left; width: 200px">
+                    <p class="body_text">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_ucIconTextButtonOpstina_hText" title="Претрага објеката општине по адреси" class="link-extranet" href="FindAdresa.aspx?OpstinaID=70106">Претрага по адреси</a>
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+
+                 </td>
+            </tr>
+        </table>
+        
+        <div id="ContentPlaceHolder1_getOpstinaKO_ValidationSummary1" style="display:none;">
+
+</div>
+
+        <!-- Animacija -->
+        <div id="ContentPlaceHolder1_getOpstinaKO_UpdateProgress1" style="display:none;">
+	
+                <div class="updateProgressPanel">
+                    <img src="Images/ajax-loader-big.gif" alt="Учитавање..." />&nbsp;&nbsp;&nbsp;Учитавање...
+                </div>
+            
+</div>
+        
+        <!-- Tabelarni pregled -->
+        <div>
+	<table class="grid-view" cellspacing="0" cellpadding="3" rules="rows" border="1" id="ContentPlaceHolder1_getOpstinaKO_GridView" style="width:570px;border-collapse:collapse;">
+		<caption>
+			Катастарске општине
+		</caption><tr class="header">
+			<th align="left" scope="col" style="width:16px;">&nbsp;</th><th align="left" scope="col">Катастарска општина</th><th align="left" scope="col">Мат. број</th><th align="left" scope="col">Општина</th><th scope="col">&nbsp;</th><th scope="col">&nbsp;</th>
+		</tr><tr class="normal">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_0" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703494">БЕЛИ ПОТОК</a>
+                    </td><td align="left" style="width:100px;">703494</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_0" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_0" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703494"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_0" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="alternate">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_1" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703621">ВОЖДОВАЦ</a>
+                    </td><td align="left" style="width:100px;">703621</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_1" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_1" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703621"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_1" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="normal">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_2" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703753">ЗУЦЕ</a>
+                    </td><td align="left" style="width:100px;">703753</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_2" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_2" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703753"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_2" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="alternate">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_3" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703761">ЈАЈИНЦИ</a>
+                    </td><td align="left" style="width:100px;">703761</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_3" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_3" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703761"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_3" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="normal">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_4" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703800">КУМОДРАЖ</a>
+                    </td><td align="left" style="width:100px;">703800</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_4" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_4" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703800"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_4" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="alternate">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_5" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703915">ПИНОСАВА</a>
+                    </td><td align="left" style="width:100px;">703915</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_5" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_5" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703915"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_5" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="normal">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_6" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703931">РАКОВИЦА СЕЛО</a>
+                    </td><td align="left" style="width:100px;">703931</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_6" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_6" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703931"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_6" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr><tr class="alternate">
+			<td>
+                        <img src='images/kn_status_3.gif' alt='Катастар непокретности' title='Катастар непокретности'
+                            style="border: 0" />
+                    </td><td align="left" style="width:250px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkKo_7" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703958">РИПАЊ</a>
+                    </td><td align="left" style="width:100px;">703958</td><td align="left" style="width:220px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hLinkOpstina_7" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106">ВОЖДОВАЦ</a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkKo_7" title="Претрага катастарских парцела" class="link-normal" href="FindParcela.aspx?KoID=703958"><img title="Претрага катастарских парцела" src="Images/map.png" alt="Претрага катастарских парцела" /></a>
+                    </td><td style="width:16px;">
+                        <a id="ContentPlaceHolder1_getOpstinaKO_GridView_hImgLinkOpstina_7" title="Претрага објеката општине по адреси" class="link-normal" href="FindAdresa.aspx?OpstinaID=70106"><img title="Претрага објеката општине по адреси" src="Images/house.png" alt="Претрага објеката општине по адреси" /></a>
+                    </td>
+		</tr>
+	</table>
+</div>
+        
+        <br />
+    |0|hiddenField|__EVENTTARGET||0|hiddenField|__EVENTARGUMENT||0|hiddenField|__LASTFOCUS||11912|hiddenField|__VIEWSTATE|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|8|hiddenField|__VIEWSTATEGENERATOR|0BCEAD21|0|hiddenField|__VIEWSTATEENCRYPTED||3804|hiddenField|__EVENTVALIDATION|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|209|asyncPostBackControlIDs||ctl00$ContentPlaceHolder1$getOpstinaKO$ToolkitScriptManager,ContentPlaceHolder1_getOpstinaKO_ToolkitScriptManager,ctl00$ContentPlaceHolder1$getOpstinaKO$dropOpstina,ContentPlaceHolder1_getOpstinaKO_dropOpstina|0|postBackControlIDs|||100|updatePanelIDs||tctl00$ContentPlaceHolder1$getOpstinaKO$UpdatePanelKO,ContentPlaceHolder1_getOpstinaKO_UpdatePanelKO|0|childUpdatePanelIDs|||99|panelsToRefreshIDs||ctl00$ContentPlaceHolder1$getOpstinaKO$UpdatePanelKO,ContentPlaceHolder1_getOpstinaKO_UpdatePanelKO|2|asyncPostBackTimeout||90|19|formAction||./PublicAccess.aspx|78|arrayDeclaration|Page_ValidationSummaries|document.getElementById("ContentPlaceHolder1_getOpstinaKO_ValidationSummary1")|70|arrayDeclaration|Page_Validators|document.getElementById("ContentPlaceHolder1_getOpstinaKO_reqOpstina")|213|scriptBlock|ScriptPath|/eKatastarPublic/ScriptResource.axd?d=e5E1AtP3xKkZXolUhwXYdPMGtzCrw3_26ON2NkQPi5od1B7v9GWVtf79vE2SL7E0xwRflpOOl-pguZcsiAEou61SiNIzrM2LFBtQtZD3_aHxJv-BgpzUmL1qWBLJig5YYPSr6RxyHYDYACMwWAHM3H_aNak1&t=ffffffffa5405632|281|scriptStartupBlock|ScriptContentNoTags|
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        |288|scriptStartupBlock|ScriptContentNoTags|
+(function(id) {
+    var e = document.getElementById(id);
+    if (e) {
+        e.dispose = function() {
+            Array.remove(Page_ValidationSummaries, document.getElementById(id));
+        }
+        e = null;
+    }
+})('ContentPlaceHolder1_getOpstinaKO_ValidationSummary1');
+|208|scriptStartupBlock|ScriptContentNoTags|
+document.getElementById('ContentPlaceHolder1_getOpstinaKO_reqOpstina').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_getOpstinaKO_reqOpstina'));
+}
+|270|scriptStartupBlock|ScriptContentNoTags|Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ContentPlaceHolder1_getOpstinaKO_UpdatePanelKO","displayAfter":500,"dynamicLayout":true}, null, null, $get("ContentPlaceHolder1_getOpstinaKO_UpdateProgress1"));
+});
+|90|onSubmit||if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;|46|expando|document.getElementById('ContentPlaceHolder1_getOpstinaKO_reqOpstina')['controltovalidate']|"ContentPlaceHolder1_getOpstinaKO_dropOpstina"|19|expando|document.getElementById('ContentPlaceHolder1_getOpstinaKO_reqOpstina')['errormessage']|"Изаберите општину"|39|expando|document.getElementById('ContentPlaceHolder1_getOpstinaKO_reqOpstina')['evaluationfunction']|"RequiredFieldValidatorEvaluateIsValid"|4|expando|document.getElementById('ContentPlaceHolder1_getOpstinaKO_reqOpstina')['initialvalue']|"-1"|6|expando|document.getElementById('ContentPlaceHolder1_getOpstinaKO_ValidationSummary1')['displaymode']|"List"|

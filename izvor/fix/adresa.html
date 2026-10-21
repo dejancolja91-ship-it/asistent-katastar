@@ -1,0 +1,440 @@
+
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="sr">
+<head><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=9" /><link rel="shortcut icon" href="images/favicon.ico" /><title>
+	Катастар непокретности: еКатастар непокретности: Адресе
+</title><meta name="Keywords" content="RGZ, Republički geodetski zavod, катастар непокретности, katastar, katastar nepokretnosti, parcele, objekti, posedbni delovi, imaoci prava, tereti, hipoteke, svojina, korisnici, držaoci, javna svojina, državna svojina, privatna svojina, idealni deo, celo pravo, pravo zakupa, pravo korišćenja" /><meta name="Description" content="Republički geodetski zavod - Катастар непокретности, knweb јавни приступ" /><meta name="Copyright" content="RGZ 2011-2012" /><meta name="Content Language" content="sr-Cyrl" /><meta name="Author" content="Web tim RGZ-a: Predrag Živić team lider, Aleksandar Marković: Data administration, Nikola Kurobasa: BLL and Presentation Layer development, Data Migration: Marija Dragnić, Danijela Jevtić, Nikola Janković" /><meta content="text/html; charset=utf-8" http-equiv="Content-Type" /><link href="Styles/RgzStyles.css" rel="stylesheet" type="text/css" />
+    <script language="javascript" type="text/javascript">
+        //<![CDATA[
+        function openPopup(url, name, w, h)
+        /*http://www.boutell.com/newfaq/creating/windowcenter.html*/
+        {
+            if (name == null) {
+                name = 'popUp';
+            }
+
+            if (w == null) {
+                w = 800;
+            }
+            if (h == null) {
+                h = 600;
+            }
+
+            // Fudge factors for window decoration space.
+            // In my tests these work well on all platforms & browsers.
+            w += 32;
+            h += 96;
+            wleft = (screen.width - w) / 2;
+            wtop = (screen.height - h) / 2;
+            // IE5 and other old browsers might allow a window that is
+            // partially offscreen or wider than the screen. Fix that.
+            // (Newer browsers fix this for us, but let's be thorough.)
+            if (wleft < 0) {
+                w = screen.width;
+                wleft = 0;
+            }
+            if (wtop < 0) {
+                h = screen.height;
+                wtop = 0;
+            }
+            var win = window.open(url,
+            name,
+            'width=' + w + ', height=' + h + ', ' +
+            'left=' + wleft + ', top=' + wtop + ', ' +
+            'location=no, menubar=no, ' +
+            'status=no, toolbar=no, scrollbars=yes, resizable=no');
+            // Just in case width and height are ignored
+            win.resizeTo(w, h);
+            // Just in case left and top are ignored
+            win.moveTo(wleft, wtop);
+            win.focus();
+        }
+
+        function expandcollapse(postid) {
+            whichpost = document.getElementById(postid);
+            if (whichpost.className == "postshown") {
+                whichpost.className = "posthidden";
+            }
+            else {
+                whichpost.className = "postshown";
+            }
+        }
+
+        // ajax 
+        function OnClientPopulating(sender, e) {
+            sender._element.className = "AutoCompleteLoading";
+        }
+        function OnClientCompleted(sender, e) {
+            sender._element.className = "";
+        }
+    </script>
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-1017629-21']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+
+        //]]>
+    </script>
+</head>
+<body>
+    <form method="post" action="./FindAdresa.aspx?OpstinaID=70254" onsubmit="javascript:return WebForm_OnSubmit();" id="form1">
+<div class="aspNetHidden">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/eKatastarPublic/WebResource.axd?d=UgimlEf9GUOZ6NR6oATR3kk9M7d5AKnxIHlWOngrNCtT47B_Nus7eY10CYP_CozIV9XlP9rrvKOzxDmF20t6H4Ay8HM1&amp;t=639190905332169432" type="text/javascript"></script>
+
+
+<script src="/eKatastarPublic/ScriptResource.axd?d=e5E1AtP3xKkZXolUhwXYdPMGtzCrw3_26ON2NkQPi5od1B7v9GWVtf79vE2SL7E0xwRflpOOl-pguZcsiAEou61SiNIzrM2LFBtQtZD3_aHxJv-BgpzUmL1qWBLJig5YYPSr6RxyHYDYACMwWAHM3H_aNak1&amp;t=ffffffffa5405632" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=eKpiJWYycmQKoZGD-Eb9kedGPdrfz4c6INN00rlOu3uf4lkEEB9UVcHKhMhv9Ke5f2FYOvnf9OtJp-g4d2bN--J9zOD-0C8XK2himoIf3kMsTQ1bE0ErBjYTvh_VbLccnHChMFn6v7HN-nToK9KGOF--zM81&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=iCAUGpalutrd41EHK5EqcQlIHnm_2qMp4OLr7ylUf_hGQoK0RvLXwmTjQx_bAAH5kk0DHRMERMpwkKn7M77Sw1PNQfjRoU5vaXNBhaLHhWhmk5-lThP-Mcnu0X4ajS1_JvQT53jdQTjS2VUCdhzXx4R5act2cEpoyUmk7j5LW2Z7AiUT0&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=0DTyaqpthy1YTPdZdq65WGCzo_SYnddPAnW0lFS2XOQG2m_5jkoED_koAUFu6j0MTelsg0ZfePF8zbxvTtvui_yGWYV936Fk6EELuC7hSlM686x5xjB8UK-iStrs3IJKyZrOtw2&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=S82TnqfpL6OBqIz-BJ5_Aln6Wicb90NyvJ8ZiScn-hlSOERQx52biN1dugsV-y9-Yd64mUCvhMA2muln17-Jf0ChHN7sn_vYz1zODVkAdC_RHmQx0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=A4U68tBQYOEI-uL9JUi8zzs_Yj7_VvbqZGA7FkH4ombaIrNIoRujXcOQKHoS3Nt7WAs9mGdZDmS_pJibIK7VNZk92vFEboWAdrhcoJdTErRZGwgZ0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=H6eV-R1s52xPZDDQVtTNH5FK5CRAmXnQhPLqVrfEEgxNQMhYHNKh28N1FNY0eo2zuQySi3OIhC1XYdXaec213YbAyRajsrxcdFGdffU2ZPk1WPQS0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=SX5lQGGXU8z-Tc7ceZWs_hSQTI7bLNcij_wgHYVZKuSo0ai9TDM3KLKvmEyr6FL_1mdkyRt37zdBUTjt14Ml2Oab4xz9yAl3h-xWbhalPd1pAEewHOuTtt7wyy-ntVixWsq4Mw2&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=wgrPVuOdNmWw-RlzZfWWs0DFt_jhCH1CCMbpCXjcceTaysv_PTBj0jQMwLn6Qvwh40h4sghPpJmQeV-GD_4mEg40O0iyiqOsBHX65w16WNApNwU00&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=ZWYSm0hU3BP6rXK9saLo-BSh9HnL5yUYK8u3XnfUWzn5NMBv9Xaz7Q3PbEM4XLK9u2csWc2_rbpmnMbrfpoX4t8xvkI-D4tIDKeGIbV8tr_n4B4r0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=cCpWXDgbb-pa1zXY2xrZMBYonO_blcgWN1B8NJrxFyL9gb6NslcnmmCg3bbtb_VMEjOirKaRjqCrdB3Jt7RhJp_H9-dbCd7d9AiM2wWfceR2KlwA0&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=FlU1WtV4tz-sN6PfHrAw6c56U9vmrvVl6QHSd6NVbbYd9ludWSR-OJ_S3ubPmh2SM0o-wYx0lwg6LucMlk5iat3adLH1uZC9AYRoVrO1QYdAnqk40&amp;t=7d5986a" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+var PageMethods = function() {
+PageMethods.initializeBase(this);
+this._timeout = 0;
+this._userContext = null;
+this._succeeded = null;
+this._failed = null;
+}
+PageMethods.prototype = {
+_get_path:function() {
+ var p = this.get_path();
+ if (p) return p;
+ else return PageMethods._staticInstance.get_path();},
+PretragaUlica:function(prefixText,count,contextKey,succeededCallback, failedCallback, userContext) {
+return this._invoke(this._get_path(), 'PretragaUlica',false,{prefixText:prefixText,count:count,contextKey:contextKey},succeededCallback,failedCallback,userContext); }}
+PageMethods.registerClass('PageMethods',Sys.Net.WebServiceProxy);
+PageMethods._staticInstance = new PageMethods();
+PageMethods.set_path = function(value) { PageMethods._staticInstance.set_path(value); }
+PageMethods.get_path = function() { return PageMethods._staticInstance.get_path(); }
+PageMethods.set_timeout = function(value) { PageMethods._staticInstance.set_timeout(value); }
+PageMethods.get_timeout = function() { return PageMethods._staticInstance.get_timeout(); }
+PageMethods.set_defaultUserContext = function(value) { PageMethods._staticInstance.set_defaultUserContext(value); }
+PageMethods.get_defaultUserContext = function() { return PageMethods._staticInstance.get_defaultUserContext(); }
+PageMethods.set_defaultSucceededCallback = function(value) { PageMethods._staticInstance.set_defaultSucceededCallback(value); }
+PageMethods.get_defaultSucceededCallback = function() { return PageMethods._staticInstance.get_defaultSucceededCallback(); }
+PageMethods.set_defaultFailedCallback = function(value) { PageMethods._staticInstance.set_defaultFailedCallback(value); }
+PageMethods.get_defaultFailedCallback = function() { return PageMethods._staticInstance.get_defaultFailedCallback(); }
+PageMethods.set_enableJsonp = function(value) { PageMethods._staticInstance.set_enableJsonp(value); }
+PageMethods.get_enableJsonp = function() { return PageMethods._staticInstance.get_enableJsonp(); }
+PageMethods.set_jsonpCallbackParameter = function(value) { PageMethods._staticInstance.set_jsonpCallbackParameter(value); }
+PageMethods.get_jsonpCallbackParameter = function() { return PageMethods._staticInstance.get_jsonpCallbackParameter(); }
+PageMethods.set_path("FindAdresa.aspx");
+PageMethods.PretragaUlica= function(prefixText,count,contextKey,onSuccess,onFailed,userContext) {PageMethods._staticInstance.PretragaUlica(prefixText,count,contextKey,onSuccess,onFailed,userContext); }
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="1F25AF01" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="1Tg8T12d0IpngHk5fVorcXFHjl+LQhnjlFR2iXqr5TTu3uwxRbn88hoHQYEskCRP89CaijLRpEyrv+vaeSepAzZBDdVkoUIRp4iiZqj2xf7P7Cy6e9YLvRhO0S5rRVYz2h/BfB2uTyoh+8haA4oNePw42w0/xkMGvnQCiTWgXqQGn/aw50f6i0eWKaKUFYs/q5DPBK3ufxF9bFySCDsmUSK3/CRRYAN5hux7bQOaFLTwmFOYF45Dlizbhnkgi3MEMlXGPzb3sd9thP2tm2clqfynRPYPMecTCGmJq2mV9J/ptYhu+Fe4t+oRbUhVGoBMUgl7tg==" />
+</div>
+    
+    <a style="" id="top"></a>
+    <!-- begin: header -->
+    <table style="width: 973px; border: 0px; margin-left: auto; margin-right: auto; margin-top: 0;
+        margin-bottom: 0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td>
+                <a href="https://www.rgz.gov.rs">
+                    <img src="/eKatastarPublic/Images/rgz-header-973-top_01.jpg" alt="" style="border: 0px;
+                        width: 320px; height: 74px" /></a>
+            </td>
+            <td>
+                <img src="/eKatastarPublic/Images/rgz-header-973-top_02.jpg" alt="" style="width: 653px;
+                    height: 74px" />
+            </td>
+        </tr>
+    </table>
+    <!-- end: header -->
+    <!-- end: app.header -->
+    <table style="width: 973px; border: 0px; padding: 0px; margin-top: 3px; margin-bottom: 1px;
+        margin-left: auto; margin-right: auto;" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 758px; background-color: #ffffff">
+                <a href="/eKatastarPublic/Default.aspx">
+                    <img id="imgHeader" title="Катастар непокретности - knweb јавни приступ" src="Images/header973.gif" alt="Катастар непокретности - knweb" /></a>
+            </td>
+        </tr>
+    </table>
+    <!-- end: app.header -->
+    <!-- app.meni -->
+    
+    <!-- app.meni -->
+    <!-- begin: sitemap -->
+    <table style="width: 973px; border: 0px; padding: 0px; margin-top: 3px; margin-bottom: 5px;
+        margin-left: auto; margin-right: auto;" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 758px; background-color: #ffffff">
+                <div id="navigation">
+                    
+                    <span id="SiteMapPath"><a href="#SiteMapPath_SkipLink"><img alt="Skip Navigation Links" src="/eKatastarPublic/WebResource.axd?d=R7edFk3Hv_vWlU3w9_EoedO1UhDfUkBUo8pPF0FG2deZwIAzVo64yrFAeYd1W4-cxx4TX1A-B3XhsblZsg0rfFbV1WY1&amp;t=639190905332169432" width="0" height="0" style="border-width:0px;" /></a><span><a title="Насловна страна web апликације" class="rnode" href="/eKatastarPublic/Default.aspx">Насловна страна</a></span><span> / </span><span><a title="Претрага базе података катастра непокретности - јавни приступ." class="node" href="/eKatastarPublic/PublicAccess.aspx">Јавни приступ</a></span><span> / </span><span class="cnode">Адресе</span><a id="SiteMapPath_SkipLink"></a></span>
+                    
+                </div>
+            </td>
+        </tr>
+    </table>
+    <!-- end: sitemap -->
+    <!-- begin: body -->
+    <center>
+        <table style="width: 973px; border: solid 1px #d5d5d5; margin: 0px 0 5px 0;">
+            <tr>
+                
+                <td style="vertical-align: top; text-align: left; width: 973px;">
+                    <!-- begin: sadržaj max -->
+                    <div>
+                        
+    <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ContentPlaceHolder1$ToolkitScriptManager', 'form1', ['tctl00$ContentPlaceHolder1$UpdatePanel1','ContentPlaceHolder1_UpdatePanel1'], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+
+    <p class="head">Адресе</p>
+
+    <!-- BEGIN: Pomoć -->
+    <p class="body_text">
+
+        <a class="help" href="javascript:expandcollapse('pomoc1')">Помоћ</a></p>
+    <div class="posthidden" id="pomoc1">
+        <ul class="help_list">
+            <li>Укуцајте почетна слова назива улице, (најмање 2 знака). Можете да куцате латиничне знакове, апликације ће <br />аутоматски конвертовати у ћирилицу). Национални сет знакова је обавезан.</li>
+            <li>Улицу обавезно изаберите из листе улица.</li>
+            <li>Унесите исправно код са слике.</li>
+            <li>Кликните на дугме <b>Прикажи</b>.</li>
+        </ul>
+    </div>
+    <p class="body_text">
+        
+
+
+
+<strong>Општина:</strong>&nbsp;<span id="ContentPlaceHolder1_ucOpstinaInfo_lblOpstinaNaziv">ЧУКАРИЦА</span>&nbsp;
+    </p>
+    <div id="ContentPlaceHolder1_UpdateProgress1" style="display:none;">
+	
+            <div class="updateProgressPanel">
+                <img src="Images/ajax-loader-big.gif" alt="Учитавање..." />&nbsp;&nbsp;&nbsp;Учитавање...
+            </div>
+        
+</div>
+    <!-- BEGIN: Forma -->
+    <div id="ContentPlaceHolder1_UpdatePanel1">
+	
+            <div class="higlight-border-0" style="width: 500px">
+                
+
+<table style="border: 0px; margin: 0px; padding: 0px; width: 500px">
+    <tr>
+        <td class="label_cell" style="width: 120px">
+            <label for="ContentPlaceHolder1_ucAdresa_txtUlica">Улица:</label>
+        </td>
+        <td class="field_cell">
+            <input name="ctl00$ContentPlaceHolder1$ucAdresa$txtUlica" type="text" maxlength="50" id="ContentPlaceHolder1_ucAdresa_txtUlica" style="width:345px;" />
+            <input type="hidden" name="ctl00$ContentPlaceHolder1$ucAdresa$hdnUlicaID" id="ContentPlaceHolder1_ucAdresa_hdnUlicaID" />
+            <span id="ContentPlaceHolder1_ucAdresa_ctl01" style="display:none;"></span>
+            
+        </td>
+    </tr>
+    <tr>
+        <td class="label_cell" style="width: 120px">
+            <label for="ContentPlaceHolder1_ucAdresa_txtKucniBroj">Кућни број:</label>
+        </td>
+        <td class="field_cell">
+            <input name="ctl00$ContentPlaceHolder1$ucAdresa$txtKucniBroj" type="text" maxlength="5" id="ContentPlaceHolder1_ucAdresa_txtKucniBroj" autocomplete="off" style="width:100px;" />
+            <span id="ContentPlaceHolder1_ucAdresa_ctl03" style="display:none;"></span>
+        </td>
+    </tr>
+</table>
+
+<script type="text/javascript">
+    function AutoCompleteStoreID(source, eventArgs) {
+        var selectedItemID = eventArgs.get_value();
+        if (selectedItemID === "-1") {
+            document.getElementById('ContentPlaceHolder1_ucAdresa_hdnUlicaID').value = "";
+        } else {
+            document.getElementById('ContentPlaceHolder1_ucAdresa_hdnUlicaID').value = selectedItemID;
+        }
+    }
+</script>
+                <table cellspacing="0" cellpadding="0" border="0" style="width: 500px">
+                    <tr>
+                        <td colspan="2" class="label_cell">
+                            
+                            Унесите код са слике:
+                            
+
+<div><svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="200" height="60" viewBox="0,0,200,60"><g stroke="silver" fill="none"><path d="M8 49 C99 37,106 46,194 33" /><path d="M16 51 C100 17,119 49,189 42" /><path d="M19 52 C97 39,82 58,181 47" /><path d="M19 26 C85 3,96 37,198 35" /><path d="M10 4 C79 36,93 53,183 2" /><path d="M8 45 C119 43,110 45,189 37" /><path d="M9 45 C104 57,92 42,183 31" /><path d="M16 46 C106 4,105 44,191 3" /><path d="M9 52 C81 55,113 18,184 27" /><path d="M11 14 C85 27,80 12,187 40" /><path d="M14 14 C112 53,79 30,182 23" /><path d="M15 31 C120 19,89 20,184 14" /><path d="M3 44 C99 18,108 29,182 5" /><path d="M20 54 C102 38,102 18,198 23" /><path d="M16 24 C116 14,118 32,185 25" /><path d="M18 44 C106 34,92 13,193 31" /></g><g fill="gray"><path d="M12.541,34.434C11.905,40.411 14.503,44.246 20.405,43.113C25.239,43.664 28.241,40.959 29.203,34.624L29.251, 15.298L25.513, 17.070L24.566, 34.482C25.532,39.823 22.011,41.068 20.562,40.510C16.691,40.708 15.110,37.665 15.757,34.030z" /><path d="M33.392,43.370L53.749, 42.800L53.154, 38.913L36.704, 40.176L53.701, 20.264L54.128, 15.559L34.341, 15.262L34.004, 18.831L49.524, 19.621L33.315, 39.958z" /><path d="M55.675,23.461L55.986, 24.958L60.103, 25.918L60.049, 38.154C60.355,42.977 61.364,42.534 65.187,41.971L66.568, 42.154L66.475, 39.812L66.184, 40.480C64.206,40.270 63.982,38.389 64.055,36.772L62.447, 26.139L66.065, 26.620L67.904, 23.889L63.390, 22.319L62.755, 18.771L59.863, 17.552L60.537, 22.996z" /><path d="M74.464,42.630L76.462, 43.243L80.980, 26.994L85.812, 43.289L89.735, 42.771L93.837, 22.673L91.517, 23.556L87.872, 37.485L84.159, 22.478L79.423, 22.811L76.031, 38.430L72.488, 23.575L67.753, 23.755z" /><path d="M101.025,43.189L104.137, 42.597L108.170, 27.763L112.435, 42.788L114.776, 42.936L121.288, 22.378L118.129, 22.740L114.240, 37.478L110.485, 23.095L107.063, 23.191L101.772, 38.314L98.246, 23.749L93.891, 22.546z" /></g></svg></div>
+<div><input name="ctl00$ContentPlaceHolder1$SVGCaptchaControl$CaptchaText" type="text" id="ContentPlaceHolder1_SVGCaptchaControl_CaptchaText" /></div>
+<span id="ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator" style="display:none;"></span>
+<span id="ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator" style="display:none;"></span>
+                            <br />
+                            <input type="submit" name="ctl00$ContentPlaceHolder1$btnSubmit" value="Прикажи" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$ContentPlaceHolder1$btnSubmit&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="ContentPlaceHolder1_btnSubmit" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="ContentPlaceHolder1_ValidationSummary1" style="display:none;">
+
+	</div>
+            <!-- BEGIN: Poruka -->
+            <p class="err-warning">
+                
+            </p>
+            <!-- END: Poruka -->
+        
+</div>
+
+                    </div>
+                    <!-- end: sadržaj -->
+                </td>
+            </tr>
+        </table>
+    </center>
+    <!-- end: body -->
+    <!-- begin: footer -->
+    <center>
+        <table style="width: 973px; border: solid 1px #d5d5d5;" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="width: 460px; height: 25px; text-align: left; vertical-align: middle;
+                    background-color: #ffffff">
+                    &nbsp;Републички геодетски завод&nbsp;2008-2026
+                </td>
+                <td style="width: 513px; height: 25px; vertical-align: middle; text-align: right;
+                    background-color: #ffffff">
+                </td>
+            </tr>
+        </table>
+    </center>
+    <!-- end: footer -->
+    
+<script type="text/javascript">
+//<![CDATA[
+var Page_ValidationSummaries =  new Array(document.getElementById("ContentPlaceHolder1_ValidationSummary1"));
+var Page_Validators =  new Array(document.getElementById("ContentPlaceHolder1_ucAdresa_ctl01"), document.getElementById("ContentPlaceHolder1_ucAdresa_ctl03"), document.getElementById("ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator"), document.getElementById("ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var ContentPlaceHolder1_ucAdresa_ctl01 = document.all ? document.all["ContentPlaceHolder1_ucAdresa_ctl01"] : document.getElementById("ContentPlaceHolder1_ucAdresa_ctl01");
+ContentPlaceHolder1_ucAdresa_ctl01.controltovalidate = "ContentPlaceHolder1_ucAdresa_txtUlica";
+ContentPlaceHolder1_ucAdresa_ctl01.errormessage = "Унесите назив или део назива улице.";
+ContentPlaceHolder1_ucAdresa_ctl01.display = "None";
+ContentPlaceHolder1_ucAdresa_ctl01.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ContentPlaceHolder1_ucAdresa_ctl01.initialvalue = "";
+var ContentPlaceHolder1_ucAdresa_ctl03 = document.all ? document.all["ContentPlaceHolder1_ucAdresa_ctl03"] : document.getElementById("ContentPlaceHolder1_ucAdresa_ctl03");
+ContentPlaceHolder1_ucAdresa_ctl03.controltovalidate = "ContentPlaceHolder1_ucAdresa_txtKucniBroj";
+ContentPlaceHolder1_ucAdresa_ctl03.errormessage = "Унесите кућни број или део кућног броја.";
+ContentPlaceHolder1_ucAdresa_ctl03.display = "None";
+ContentPlaceHolder1_ucAdresa_ctl03.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ContentPlaceHolder1_ucAdresa_ctl03.initialvalue = "";
+var ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator = document.all ? document.all["ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator"] : document.getElementById("ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator");
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator.controltovalidate = "ContentPlaceHolder1_SVGCaptchaControl_CaptchaText";
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator.errormessage = "Унесите код са слике.";
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator.display = "None";
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator.initialvalue = "";
+var ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator = document.all ? document.all["ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator"] : document.getElementById("ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator");
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator.errormessage = "Неисправна комбинација слова и бројева.";
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator.display = "None";
+ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator.evaluationfunction = "CustomValidatorEvaluateIsValid";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        
+(function(id) {
+    var e = document.getElementById(id);
+    if (e) {
+        e.dispose = function() {
+            Array.remove(Page_ValidationSummaries, document.getElementById(id));
+        }
+        e = null;
+    }
+})('ContentPlaceHolder1_ValidationSummary1');
+Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ContentPlaceHolder1_UpdatePanel1","displayAfter":500,"dynamicLayout":true}, null, null, $get("ContentPlaceHolder1_UpdateProgress1"));
+});
+
+document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_ucAdresa_ctl01'));
+}
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.AutoCompleteBehavior, {"completionListCssClass":"AutoCompleteList","completionListItemCssClass":"AutoCompleteListItem","contextKey":"70254","delimiterCharacters":"","enableCaching":false,"firstRowSelected":true,"highlightedItemCssClass":"AutoCompleteItemHighlighted","id":"ContentPlaceHolder1_ucAdresa_AutoCompleteUlica","minimumPrefixLength":2,"onHide":"{\"AnimationName\":\"Parallel\",\"Duration\":\".4\",\"AnimationChildren\":[{\"AnimationName\":\"FadeOut\",\"AnimationChildren\":[]}]}","onShow":"{\"AnimationName\":\"Sequence\",\"AnimationChildren\":[{\"AnimationName\":\"OpacityAction\",\"Opacity\":\"0\",\"AnimationChildren\":[]},{\"AnimationName\":\"HideAction\",\"Visible\":\"true\",\"AnimationChildren\":[]},{\"AnimationName\":\"Parallel\",\"Duration\":\".4\",\"AnimationChildren\":[{\"AnimationName\":\"FadeIn\",\"AnimationChildren\":[]}]}]}","serviceMethod":"PretragaUlica","servicePath":"FindAdresa.aspx","showOnlyCurrentWordInCompletionListItem":true,"useContextKey":true}, {"itemSelected":AutoCompleteStoreID}, null, $get("ContentPlaceHolder1_ucAdresa_txtUlica"));
+});
+
+document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_ucAdresa_ctl03'));
+}
+
+document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaRequiredValidator'));
+}
+
+document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('ContentPlaceHolder1_SVGCaptchaControl_CaptchaValidator'));
+}
+//]]>
+</script>
+</form>
+</body>
+</html>

@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="sr">
+<head><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=9" /><link rel="shortcut icon" href="images/favicon.ico" /><title>
+	Катастар непокретности: еКатастар непокретности: Резултат претраживања парцела
+</title><meta name="Keywords" content="RGZ, Republički geodetski zavod, катастар непокретности, katastar, katastar nepokretnosti, parcele, objekti, posedbni delovi, imaoci prava, tereti, hipoteke, svojina, korisnici, držaoci, javna svojina, državna svojina, privatna svojina, idealni deo, celo pravo, pravo zakupa, pravo korišćenja" /><meta name="Description" content="Republički geodetski zavod - Катастар непокретности, knweb јавни приступ" /><meta name="Copyright" content="RGZ 2011-2012" /><meta name="Content Language" content="sr-Cyrl" /><meta name="Author" content="Web tim RGZ-a: Predrag Živić team lider, Aleksandar Marković: Data administration, Nikola Kurobasa: BLL and Presentation Layer development, Data Migration: Marija Dragnić, Danijela Jevtić, Nikola Janković" /><meta content="text/html; charset=utf-8" http-equiv="Content-Type" /><link href="Styles/RgzStyles.css" rel="stylesheet" type="text/css" />
+    <script language="javascript" type="text/javascript">
+        //<![CDATA[
+        function openPopup(url, name, w, h)
+        /*http://www.boutell.com/newfaq/creating/windowcenter.html*/
+        {
+            if (name == null) {
+                name = 'popUp';
+            }
+
+            if (w == null) {
+                w = 800;
+            }
+            if (h == null) {
+                h = 600;
+            }
+
+            // Fudge factors for window decoration space.
+            // In my tests these work well on all platforms & browsers.
+            w += 32;
+            h += 96;
+            wleft = (screen.width - w) / 2;
+            wtop = (screen.height - h) / 2;
+            // IE5 and other old browsers might allow a window that is
+            // partially offscreen or wider than the screen. Fix that.
+            // (Newer browsers fix this for us, but let's be thorough.)
+            if (wleft < 0) {
+                w = screen.width;
+                wleft = 0;
+            }
+            if (wtop < 0) {
+                h = screen.height;
+                wtop = 0;
+            }
+            var win = window.open(url,
+            name,
+            'width=' + w + ', height=' + h + ', ' +
+            'left=' + wleft + ', top=' + wtop + ', ' +
+            'location=no, menubar=no, ' +
+            'status=no, toolbar=no, scrollbars=yes, resizable=no');
+            // Just in case width and height are ignored
+            win.resizeTo(w, h);
+            // Just in case left and top are ignored
+            win.moveTo(wleft, wtop);
+            win.focus();
+        }
+
+        function expandcollapse(postid) {
+            whichpost = document.getElementById(postid);
+            if (whichpost.className == "postshown") {
+                whichpost.className = "posthidden";
+            }
+            else {
+                whichpost.className = "postshown";
+            }
+        }
+
+        // ajax 
+        function OnClientPopulating(sender, e) {
+            sender._element.className = "AutoCompleteLoading";
+        }
+        function OnClientCompleted(sender, e) {
+            sender._element.className = "";
+        }
+    </script>
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-1017629-21']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+
+        //]]>
+    </script>
+</head>
+<body>
+    <form method="post" action="./FindParcelaResult.aspx" id="form1">
+<div class="aspNetHidden">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/eKatastarPublic/WebResource.axd?d=UgimlEf9GUOZ6NR6oATR3kk9M7d5AKnxIHlWOngrNCtT47B_Nus7eY10CYP_CozIV9XlP9rrvKOzxDmF20t6H4Ay8HM1&amp;t=639190905332169432" type="text/javascript"></script>
+
+
+<script src="/eKatastarPublic/ScriptResource.axd?d=eKpiJWYycmQKoZGD-Eb9kedGPdrfz4c6INN00rlOu3uf4lkEEB9UVcHKhMhv9Ke5f2FYOvnf9OtJp-g4d2bN--J9zOD-0C8XK2himoIf3kMsTQ1bE0ErBjYTvh_VbLccnHChMFn6v7HN-nToK9KGOF--zM81&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<script src="/eKatastarPublic/ScriptResource.axd?d=iCAUGpalutrd41EHK5EqcQlIHnm_2qMp4OLr7ylUf_hGQoK0RvLXwmTjQx_bAAH5kk0DHRMERMpwkKn7M77Sw1PNQfjRoU5vaXNBhaLHhWhmk5-lThP-Mcnu0X4ajS1_JvQT53jdQTjS2VUCdhzXx4R5act2cEpoyUmk7j5LW2Z7AiUT0&amp;t=ffffffffbec1863d" type="text/javascript"></script>
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="CEA07AB0" />
+	<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="ubzeJJc++yQixc2XNdMdjpnnpfafFMUQ9H8L3cY4WoCEVTUgZVoNWsIbvQ5eWIIb2UAYqkkVsF5wwOywLXS1rk0lXRjPIh1jmcUpVstXsikR1VoDZkZPBZs/k0MyQMfiNeOzJFwBf6Yec0KnEF8XVoO0hCdDrmxE1GkRJI4Oazzyph0gMo5iY0UhmgrVrf5D4Qr/drVgN4dLNo7ovS1bmo57sx9VuV1dLJuYQursvKOjW8euh+46G75DVKqZoAuK7KklaMUqMRX1njGgkSlY+TxN6FNSGhlVpvXoQv3OuO0QFRiY" />
+</div>
+    
+    <a style="" id="top"></a>
+    <!-- begin: header -->
+    <table style="width: 973px; border: 0px; margin-left: auto; margin-right: auto; margin-top: 0;
+        margin-bottom: 0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td>
+                <a href="https://www.rgz.gov.rs">
+                    <img src="/eKatastarPublic/Images/rgz-header-973-top_01.jpg" alt="" style="border: 0px;
+                        width: 320px; height: 74px" /></a>
+            </td>
+            <td>
+                <img src="/eKatastarPublic/Images/rgz-header-973-top_02.jpg" alt="" style="width: 653px;
+                    height: 74px" />
+            </td>
+        </tr>
+    </table>
+    <!-- end: header -->
+    <!-- end: app.header -->
+    <table style="width: 973px; border: 0px; padding: 0px; margin-top: 3px; margin-bottom: 1px;
+        margin-left: auto; margin-right: auto;" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 758px; background-color: #ffffff">
+                <a href="/eKatastarPublic/Default.aspx">
+                    <img id="imgHeader" title="Катастар непокретности - knweb јавни приступ" src="Images/header973.gif" alt="Катастар непокретности - knweb" /></a>
+            </td>
+        </tr>
+    </table>
+    <!-- end: app.header -->
+    <!-- app.meni -->
+    
+    <!-- app.meni -->
+    <!-- begin: sitemap -->
+    <table style="width: 973px; border: 0px; padding: 0px; margin-top: 3px; margin-bottom: 5px;
+        margin-left: auto; margin-right: auto;" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 758px; background-color: #ffffff">
+                <div id="navigation">
+                    
+                    <span id="SiteMapPath"><a href="#SiteMapPath_SkipLink"><img alt="Skip Navigation Links" src="/eKatastarPublic/WebResource.axd?d=R7edFk3Hv_vWlU3w9_EoedO1UhDfUkBUo8pPF0FG2deZwIAzVo64yrFAeYd1W4-cxx4TX1A-B3XhsblZsg0rfFbV1WY1&amp;t=639190905332169432" width="0" height="0" style="border-width:0px;" /></a><span><a title="Насловна страна web апликације" class="rnode" href="/eKatastarPublic/Default.aspx">Насловна страна</a></span><span> / </span><span><a title="Претрага базе података катастра непокретности - јавни приступ." class="node" href="/eKatastarPublic/PublicAccess.aspx">Јавни приступ</a></span><span> / </span><span><a title="Претрага парцела, преглед података објеката и посебних делова." class="node" href="/eKatastarPublic/FindParcela.aspx?KoID=703621">Парцеле</a></span><span> / </span><span class="cnode">Парцеле - резултат претраживања</span><a id="SiteMapPath_SkipLink"></a></span>
+                    
+                </div>
+            </td>
+        </tr>
+    </table>
+    <!-- end: sitemap -->
+    <!-- begin: body -->
+    <center>
+        <table style="width: 973px; border: solid 1px #d5d5d5; margin: 0px 0 5px 0;">
+            <tr>
+                
+                <td style="vertical-align: top; text-align: left; width: 973px;">
+                    <!-- begin: sadržaj max -->
+                    <div>
+                        
+    <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ContentPlaceHolder1$ToolkitScriptManager1', 'form1', ['tctl00$ContentPlaceHolder1$UpdatePanel1','ContentPlaceHolder1_UpdatePanel1'], [], [], 90, 'ctl00');
+//]]>
+</script>
+
+
+    <!-- BEGIN: Sadržaj -->
+    <p class="head">
+        Резултат претраживања парцела
+    </p>
+    <p class="info_text">
+        Претрага парцела, преглед података објеката и посебних делова.
+    </p>
+    <!-- BEGIN: Pomoć -->
+    <p class="body_text">
+        <a class="help" href="javascript:expandcollapse('pomoc1')">Помоћ</a>
+    </p>
+    <div class="posthidden" id="pomoc1">
+        <ul class="help_list">
+            <li>За селекцију одређеног реда у табеларном прегледу кликните на иконицу
+                <img src="Images/cmdSelect.gif" alt="" />.</li>
+            <li>За преглед информација о непокретности у табеларном прегледу кликните на иконицу
+                <img src="Images/properties.gif" alt="" />.</li>
+        </ul>
+    </div>
+    <!-- END: Pomoć -->
+    
+<table cellspacing="0" cellpadding="5" width="400" border="0">
+	<tr>
+		<td class="form_item_v" width="40%"><strong>Општина:</strong></td>
+		<td class="form_item_v" width="60%"><span id="ContentPlaceHolder1_ucOpstinaKoInfo_lblOpstinaNaziv">ВОЖДОВАЦ</span></td>
+	</tr>
+	<tr>
+		<td class="form_item_v"><strong>Катастарска општина:</strong></td>
+		<td class="form_item_v"><span id="ContentPlaceHolder1_ucOpstinaKoInfo_lblKoNaziv">ВОЖДОВАЦ</span></td>
+	</tr>
+</table>
+
+    <div id="ContentPlaceHolder1_UpdateProgress1" style="display:none;">
+	
+            <div class="updateProgressPanel">
+                <img src="Images/ajax-loader-big.gif" alt="Учитавање..." />&nbsp;&nbsp;&nbsp;Учитавање...
+            </div>
+        
+</div>
+    <!-- BEGIN: Forma -->
+    <div id="ContentPlaceHolder1_UpdatePanel1">
+	
+            
+
+<div class="higlight-border-0" style="width: 500px">
+    <table cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <th class="label_cell">Евиденција:</th>
+            <td style="width: 24px; text-align: right"><img title="Катастар непокретности" src="Images/evidencija_kn.gif" /></td>
+            <td class="field_cell">Катастар непокретности</td>
+            <td style="width: 24px; text-align: right"><img title="Катастар земљишта" src="Images/evidencija_kz.gif" /></td>
+            <td class="field_cell">Катастар земљишта</td>
+        </tr>
+    </table>
+</div>
+
+
+            <!-- BEGIN: Tabelarni pregled podataka (master) -->
+            <div>
+		<table class="grid-view" cellspacing="0" cellpadding="3" rules="rows" border="1" id="ContentPlaceHolder1_GridView1" style="color:Gray;width:965px;border-collapse:collapse;">
+			<caption>
+				Подаци о земљишту (парцела и делови парцела)
+			</caption><tr class="header">
+				<th scope="col">&nbsp;</th><th scope="col">&nbsp;</th><th align="left" scope="col">Број парцеле</th><th align="left" scope="col">Број дела парцеле</th><th scope="col">Површина (m²)</th><th align="left" scope="col">Улица/Потес</th><th align="left" scope="col">Начин коришћења земљишта</th><th align="left" scope="col">Врста земљишта</th><th align="left" valign="top" scope="col" style="width:16px;">&nbsp;</th>
+			</tr><tr class="selected">
+				<td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <input type="image" name="ctl00$ContentPlaceHolder1$GridView1$ctl02$cmdSelect" id="ContentPlaceHolder1_GridView1_cmdSelect_0" title="Селекција реда" src="images/cmdSelect.gif" alt="Селекција реда" />
+                        </td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            
+                            <img title="Катастар непокретности" src="Images/evidencija_kn.gif" />
+                        </td><td align="left" valign="top" style="width:60px;">4415</td><td align="center" valign="top" style="width:60px;">1</td><td align="right" valign="top" style="width:100px;">
+                            81
+                        </td><td align="left" valign="top" style="width:301px;">КУМОДРАШКА</td><td align="left" valign="top" style="width:230px;">ЗЕМЉИШТЕ ПОД ПРЕТЕЖНИМ ДЕЛОМ ОБЈЕКТА</td><td align="left" valign="top" style="width:230px;">ГРАДСКО ГРАЂЕВИНСКО ЗЕМЉИШТЕ</td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <a href="javascript:openPopup('NepokretnostProperties.aspx?nepID=aomZVVU7jzg=', 'properties', 800, 768);">
+                                <img src="images/properties.gif" alt="Подаци о непокретности" title="Подаци о непокретности"
+                                    style="border: 0" /></a>
+                        </td>
+			</tr><tr class="alternate">
+				<td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <input type="image" name="ctl00$ContentPlaceHolder1$GridView1$ctl03$cmdSelect" id="ContentPlaceHolder1_GridView1_cmdSelect_1" title="Селекција реда" src="images/cmdSelect.gif" alt="Селекција реда" />
+                        </td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            
+                            <img title="Катастар непокретности" src="Images/evidencija_kn.gif" />
+                        </td><td align="left" valign="top" style="width:60px;">4415</td><td align="center" valign="top" style="width:60px;">2</td><td align="right" valign="top" style="width:100px;">
+                            77
+                        </td><td align="left" valign="top" style="width:301px;">КУМОДРАШКА</td><td align="left" valign="top" style="width:230px;">ЗЕМЉИШТЕ ПОД ОСТАЛИМ ДЕЛОМ ОБЈЕКТА</td><td align="left" valign="top" style="width:230px;">ГРАДСКО ГРАЂЕВИНСКО ЗЕМЉИШТЕ</td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <a href="javascript:openPopup('NepokretnostProperties.aspx?nepID=aomZVVU7jzg=', 'properties', 800, 768);">
+                                <img src="images/properties.gif" alt="Подаци о непокретности" title="Подаци о непокретности"
+                                    style="border: 0" /></a>
+                        </td>
+			</tr><tr class="normal">
+				<td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <input type="image" name="ctl00$ContentPlaceHolder1$GridView1$ctl04$cmdSelect" id="ContentPlaceHolder1_GridView1_cmdSelect_2" title="Селекција реда" src="images/cmdSelect.gif" alt="Селекција реда" />
+                        </td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            
+                            <img title="Катастар непокретности" src="Images/evidencija_kn.gif" />
+                        </td><td align="left" valign="top" style="width:60px;">4415</td><td align="center" valign="top" style="width:60px;">3</td><td align="right" valign="top" style="width:100px;">
+                            19
+                        </td><td align="left" valign="top" style="width:301px;">КУМОДРАШКА</td><td align="left" valign="top" style="width:230px;">ЗЕМЉИШТЕ ПОД ЗГРАДОМ И ДРУГИМ ОБЈЕКТОМ</td><td align="left" valign="top" style="width:230px;">ГРАДСКО ГРАЂЕВИНСКО ЗЕМЉИШТЕ</td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <a href="javascript:openPopup('NepokretnostProperties.aspx?nepID=aomZVVU7jzg=', 'properties', 800, 768);">
+                                <img src="images/properties.gif" alt="Подаци о непокретности" title="Подаци о непокретности"
+                                    style="border: 0" /></a>
+                        </td>
+			</tr><tr class="alternate">
+				<td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <input type="image" name="ctl00$ContentPlaceHolder1$GridView1$ctl05$cmdSelect" id="ContentPlaceHolder1_GridView1_cmdSelect_3" title="Селекција реда" src="images/cmdSelect.gif" alt="Селекција реда" />
+                        </td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            
+                            <img title="Катастар непокретности" src="Images/evidencija_kn.gif" />
+                        </td><td align="left" valign="top" style="width:60px;">4415</td><td align="center" valign="top" style="width:60px;">4</td><td align="right" valign="top" style="width:100px;">
+                            248
+                        </td><td align="left" valign="top" style="width:301px;">КУМОДРАШКА</td><td align="left" valign="top" style="width:230px;">ЗЕМЉИШТЕ УЗ ЗГРАДУ И ДРУГИ ОБЈЕКАТ</td><td align="left" valign="top" style="width:230px;">ГРАДСКО ГРАЂЕВИНСКО ЗЕМЉИШТЕ</td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <a href="javascript:openPopup('NepokretnostProperties.aspx?nepID=aomZVVU7jzg=', 'properties', 800, 768);">
+                                <img src="images/properties.gif" alt="Подаци о непокретности" title="Подаци о непокретности"
+                                    style="border: 0" /></a>
+                        </td>
+			</tr><tr>
+				<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td align="right" style="font-weight:normal;">
+                            ∑:&nbsp;425
+                        </td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+			</tr>
+		</table>
+	</div>
+            <!-- END: Tabelarni pregled podataka (master) -->
+            <!-- BEGIN: Tabelarni pregled podataka (details) -->
+            <div>
+		<table class="grid-view" cellspacing="0" cellpadding="3" rules="rows" border="1" id="ContentPlaceHolder1_GridView2" style="color:Gray;width:900px;border-collapse:collapse;">
+			<caption>
+				Подаци о зградама и другим грађевинским објектима (објекти на изабраном делу парцеле)
+			</caption><tr class="header">
+				<th align="left" valign="top" scope="col" style="width:16px;">&nbsp;</th><th align="left" scope="col">Улица</th><th align="left" scope="col">Кућни број</th><th align="left" scope="col">Кућни подброј</th><th align="left" scope="col">Површина (m&#178;)</th><th align="left" scope="col">Начин коришћења објекта</th><th align="left" scope="col">Статус објекта</th><th align="left" valign="top" scope="col" style="width:16px;">&nbsp;</th>
+			</tr><tr class="selected">
+				<td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <input type="image" name="ctl00$ContentPlaceHolder1$GridView2$ctl02$Imagebutton1" id="ContentPlaceHolder1_GridView2_Imagebutton1_0" title="Селекција реда" src="images/cmdSelect.gif" alt="Селекција реда" />
+                        </td><td align="left" valign="top" style="width:300px;">КУМОДРАШКА 22А</td><td align="left" valign="top" style="width:60px;">&nbsp;</td><td align="left" valign="top" style="width:80px;">&nbsp;</td><td align="right" valign="top" style="width:50px;">81</td><td align="left" valign="top" style="width:200px;">ПОРОДИЧНА СТАМБЕНА ЗГРАДА-ДЕО</td><td align="left" valign="top" style="width:250px;">ОБЈЕКАТ ИЗГРАЂЕН ПРЕ ДОНОШЕЊА ПРОПИСА О ИЗГРАДЊИ ОБЈЕКТА</td><td align="left" valign="top" style="width:16px;white-space:nowrap;">
+                            <a href="javascript:openPopup('NepokretnostProperties.aspx?nepID=bzBIIaV8NWA=', 'properties', 800, 768);">
+                                <img src="images/properties.gif" alt="Подаци о непокретности" title="Подаци о непокретности" style="border: 0" />
+                            </a>
+                        </td>
+			</tr>
+		</table>
+	</div>
+            <!-- END: Tabelarni pregled podataka (details) -->
+            <!-- BEGIN: Tabelarni pregled podataka (details) -->
+            <div>
+		<table class="grid-view" cellspacing="0" cellpadding="3" rules="rows" border="1" id="ContentPlaceHolder1_GridView3" style="color:Gray;width:850px;border-collapse:collapse;">
+			<caption>
+				Посебни делови изабраног објекта
+			</caption><tr class="header">
+				<th align="left" scope="col">Евид. број</th><th align="left" scope="col">Бр. улаза</th><th align="left" scope="col">Бр. стана</th><th align="left" scope="col">Подбр. стана</th><th align="left" scope="col">Начин коришћења посебног дела</th><th align="left" scope="col">Корисна површина (m&#178;)</th><th align="left" valign="top" scope="col" style="width:16px;">&nbsp;</th>
+			</tr><tr class="normal">
+				<td align="left" valign="top" style="width:50px;">1</td><td align="left" valign="top" style="width:50px;">22А</td><td align="left" valign="top" style="width:50px;">1</td><td align="left" valign="top" style="width:50px;">&nbsp;</td><td align="left" valign="top" style="width:400px;">СТАН</td><td align="left" valign="top" style="width:220px;">55</td><td>
+                            <a href="javascript:openPopup('NepokretnostProperties.aspx?nepID=2oYMqzJeqjQ=', 'properties', 800, 768);">
+                                <img src="images/properties.gif" alt="Подаци о непокретности" title="Подаци о непокретности" style="border: 0" />
+                            </a>
+                        </td>
+			</tr>
+		</table>
+	</div>
+            <!-- END: Tabelarni pregled podataka (details) -->
+            <!-- BEGIN: Poruka -->
+            <p class="err-warning">
+                
+            </p>
+            <!-- END: Poruka -->
+            <!-- END: Sadržaj -->
+        
+</div>
+
+                    </div>
+                    <!-- end: sadržaj -->
+                </td>
+            </tr>
+        </table>
+    </center>
+    <!-- end: body -->
+    <!-- begin: footer -->
+    <center>
+        <table style="width: 973px; border: solid 1px #d5d5d5;" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="width: 460px; height: 25px; text-align: left; vertical-align: middle;
+                    background-color: #ffffff">
+                    &nbsp;Републички геодетски завод&nbsp;2008-2026
+                </td>
+                <td style="width: 513px; height: 25px; vertical-align: middle; text-align: right;
+                    background-color: #ffffff">
+                </td>
+            </tr>
+        </table>
+    </center>
+    <!-- end: footer -->
+    
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.add_init(function() {
+    $create(Sys.UI._UpdateProgress, {"associatedUpdatePanelId":"ContentPlaceHolder1_UpdatePanel1","displayAfter":500,"dynamicLayout":true}, null, null, $get("ContentPlaceHolder1_UpdateProgress1"));
+});
+//]]>
+</script>
+</form>
+</body>
+</html>
