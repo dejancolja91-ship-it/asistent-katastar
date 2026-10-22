@@ -13,7 +13,8 @@ import time
 
 RAD = tempfile.mkdtemp(prefix="kat_zadaci_")
 os.environ["KATASTAR_TEST"] = "1"
-os.environ["KATASTAR_PREGLEDAC"] = "/opt/pw-browsers/chromium"
+PREGLEDAC = os.environ.get("KATASTAR_PREGLEDAC") or "/opt/pw-browsers/chromium"   # v34: u CI-u drugi put
+os.environ["KATASTAR_PREGLEDAC"] = PREGLEDAC
 import mock_sajt  # noqa: E402
 
 srv = mock_sajt.pokreni()
@@ -198,9 +199,65 @@ app._pokreni_zadatke()
 ok(os.path.exists(os.path.join(Z, "prekinut.json")) or app._zadatak is not None, "prekinut zadatak vraćen u red")
 ok(cekaj(lambda: izvestaj("prekinut") is not None, 300), "prekinut zadatak završen posle ponovnog pokretanja")
 
+# --- v35: parcele koje su već u praćenju (Dejan: "neke su već u aplikaciji, neću duplikate") ---
+ok(all(x.get("preskocena") and not x.get("provera") for x in r2["rezultat"] if "već je bila" in x["stanje"]) and
+   not any(x.get("provera") for x in r2["rezultat"]),
+   "ponovljen ugovor: postojeće parcele se podrazumevano ne proveravaju ponovo")
+ok("(nije ponovo proverena)" in open(os.path.join(Z, "izvestaji", "ponovo.txt"), encoding="utf-8").read(),
+   "izveštaj: piše da nije ponovo proverena")
+ok("već u praćenju 3" in app.txt.get("1.0", "end"), "poruka: koliko je već bilo u praćenju")
+broj_pre = len(app.baza.parcele())
+ostavi("proveri.json", {"klijent": "Peti", "grupa": "Druga", "pdf": False, "postojece": "proveri",
+                        "parcele": [{"opstina": "ВОЖДОВАЦ", "ko": "КУМОДРАЖ", "broj": "4415"}]})
+ok(cekaj(lambda: izvestaj("proveri") is not None, 300), "postojece=proveri: završen")
+rp = (izvestaj("proveri") or {"rezultat": [{}]})["rezultat"][0]
+ok(rp.get("provera") == "skinuto sa sajta" and not rp.get("preskocena") and
+   app.baza.parcela_po_mestu(par["4415"]["ko_id"], "4415")["grupa"] == "Klijent Ugovor",
+   "postojece=proveri: provereno, grupa ista (%s)" % rp)
+ostavi("premesti.json", {"klijent": "Peti", "grupa": "euroroad", "pdf": False, "postojece": "premesti",
+                         "parcele": [{"opstina": "ВОЖДОВАЦ", "ko": "КУМОДРАЖ", "broj": "4415"}, {"opstina": "ВОЖДОВАЦ", "ko": "КУМОДРАЖ", "broj": "10383"}]})
+ok(cekaj(lambda: izvestaj("premesti") is not None, 300), "postojece=premesti: završen")
+rm = (izvestaj("premesti") or {"rezultat": [{}, {}]})["rezultat"]
+ok(all("premeštena u grupu euroroad" in x.get("stanje", "") and x.get("preskocena") for x in rm) and
+   {p["grupa"] for p in app.baza.parcele()} >= {"euroroad"} and
+   app.baza.parcela_po_mestu(par["4415"]["ko_id"], "4415")["grupa"] == "euroroad",
+   "postojece=premesti: premeštene u grupu zadatka, bez provere: %s" % [x.get("stanje") for x in rm])
+ok(len(app.baza.parcele()) == broj_pre and (izvestaj("premesti") or {}).get("greska") is None,
+   "nijedan duplikat, bez greške kad su sve već u praćenju")
+ostavi("lose_postojece.json", {"klijent": "X", "postojece": "dupliraj", "parcele": [{"ko": "КУМОДРАЖ", "broj": "1"}]})
+ok(cekaj(lambda: izvestaj("lose_postojece") is not None, 30) and
+   "postojece mora biti" in izvestaj("lose_postojece")["greska"], "neispravno postojece: zadatak odbijen")
+
+# --- v35: zadatak preko Drive-a (folder ASISTENT KATASTAR/zadaci), izveštaj nazad na Drive ---
+DRIVE = os.path.join(RAD, "G", "My Drive", ak.DRIVE_FOLDER)
+os.makedirs(DRIVE)
+os.environ["KATASTAR_DRIVE"] = DRIVE
+ok(ak.nadji_drive_folder() == DRIVE, "Drive folder pronađen")
+ok(app.drive_folder() is None, "u testu bez podešavanja Drive se ne koristi sam od sebe pre izbora")
+app.baza.postavi_podesavanje("drive_folder", DRIVE)
+DZ = os.path.join(DRIVE, "zadaci")
+ok(app.drive_zadaci() == DZ and os.path.isdir(DZ), "folder zadaci na Drive-u napravljen")
+with open(os.path.join(DZ, "sa_drive.json"), "w", encoding="utf-8") as f:
+    json.dump({"klijent": "Drive Klijent", "grupa": "euroroad", "pdf": False,
+               "parcele": [{"opstina": "ВОЖДОВАЦ", "ko": "КУМОДРАЖ", "broj": "4415"}, {"opstina": "ВОЖДОВАЦ", "ko": "КУМОДРАЖ", "broj": "20015"}]}, f)
+ok(cekaj(lambda: os.path.exists(os.path.join(DZ, "izvestaji", "sa_drive.txt")), 300),
+   "zadatak sa Drive-a urađen, izveštaj vraćen na Drive")
+ok(not os.path.exists(os.path.join(DZ, "sa_drive.json")) and
+   os.path.exists(os.path.join(Z, "obradjeni", "sa_drive.json")), "zadatak sklonjen sa Drive-a u obradjeni")
+rd = json.load(open(os.path.join(DZ, "izvestaji", "sa_drive.json"), encoding="utf-8"))
+ok(rd["rezultat"][0].get("preskocena") and rd["rezultat"][1]["stanje"].startswith("dodata u praćenje") and
+   app.baza.parcela_po_mestu(par["4415"]["ko_id"], "20015")["grupa"] == "euroroad",
+   "sa Drive-a: postojeća preskočena, nova dodata u grupu: %s" % [x["stanje"] for x in rd["rezultat"]])
+app.baza.postavi_podesavanje("drive_folder", "-")
+with open(os.path.join(DZ, "iskljuceno.json"), "w", encoding="utf-8") as f:
+    json.dump({"klijent": "X", "parcele": [{"opstina": "ВОЖДОВАЦ", "ko": "КУМОДРАЖ", "broj": "4415"}]}, f)
+cekaj(lambda: False, 3.0)
+ok(os.path.exists(os.path.join(DZ, "iskljuceno.json")), "Drive isključen: zadatak se ne uzima")
+
 subprocess = __import__("subprocess")
 subprocess.run(["import", "-window", "root", "zadatak_v32%s.png" % ("" if UVECANJE == 1 else "_150")], check=False)
 root.destroy()
 srv.shutdown()
 print("\nUKUPNO GRESAKA: %d" % len(GRESKE))
+sys.stdout.flush()   # bez ovoga se poslednji redovi gube kad izlaz ide u fajl (CI)
 os._exit(1 if GRESKE else 0)

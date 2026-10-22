@@ -8,10 +8,12 @@ Asistent KATASTAR v1 - pretraga i pracenje parcela na eKatastru (katastar.rgz.go
 - captcha (SVG, 5 znakova, razlikuje velika i mala slova): program je cita sam kad je siguran,
   inace je upisujes ti; svaki prihvacen odgovor ga uci novim znakovima
 - azuriranje sa GitHub-a (v33): pri pokretanju program sam preuzme novu verziju (git pull), staru sacuva u rezerve/
+- v34: nova verzija se pre pokretanja proba na kopiji podataka; ako ne radi, ostaje stara
 
 Potrebno: Python 3.9+ i paket requests  (py -m pip install requests)
 """
 import base64
+import contextlib
 import csv
 import datetime as dt
 import hashlib
@@ -41,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v33"
+VERZIJA = "v39"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -85,7 +87,8 @@ EK_PODSEKCIJA = "#eef1f6"
 EK_TACKE = "#9a9a9a"
 TEST_REZIM = os.environ.get("KATASTAR_TEST") == "1"
 
-DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
+# v34: KATASTAR_DIR = privremeni folder za probni start nove verzije (radi na kopiji baze, ne dira prave podatke)
+DIR = os.environ.get("KATASTAR_DIR") or os.path.dirname(os.path.abspath(sys.argv[0]))
 DB_PATH = os.path.join(DIR, "katastar.db")
 REZERVE_DIR = os.path.join(DIR, "rezerve")
 SIFARNIK_PATH = os.path.join(DIR, "sifarnik_ko.json")
@@ -1037,6 +1040,26 @@ def napravi_snimak(rez):
     }
 
 
+def sumnjiv_snimak(stari, novi, sveze_nep=()):
+    """v37: odgovor sajta koji izgleda nepotpuno (sajt pod opterećenjem vrati okrnjenu stranicu) - takva provera ne
+    sme da postane "promena" koja ode klijentu. Vraća razlog ili None. sveze_nep = podaci o nepokretnosti koji su
+    stvarno skinuti u ovoj proveri (stari se inače prepisuju u novi snimak)."""
+    if not stari or not novi:
+        return None
+    if stari.get("delovi") and not novi.get("delovi"):
+        return "sajt nije vratio delove parcele (ranije %d)" % len(stari["delovi"])
+    if len(stari.get("posebni") or []) >= 3 and not novi.get("posebni") and novi.get("objekti"):
+        return "zgrade su tu, a nema nijednog posebnog dela (ranije %d)" % len(stari["posebni"])
+    if "parcela" in sveze_nep and ista_nep_verzija(stari, novi) and vlasnici_tereti(stari)[0] and \
+            not vlasnici_tereti(novi)[0]:
+        return "nema vlasnika parcele (ranije: %s)" % vlasnici_tereti(stari)[0][:80]
+    return None
+
+
+def otisak_snimka(sn):
+    return hashlib.sha1(json.dumps(sn, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def ista_nep_verzija(stari, novi):
     """Podaci o nepokretnosti iz starije verzije programa zapisani su drugacije - ne porede se."""
     return (stari or {}).get("nep_v") == (novi or {}).get("nep_v")
@@ -1562,6 +1585,24 @@ def napravi_rezervu_baze():
         upisi_dnevnik("Rezervna kopija baze nije napravljena: " + traceback.format_exc())
 
 
+def _mig_rok_grupe(c):
+    """v36: rok provere po grupi (dana) i brže čitanje istorije promena."""
+    c.execute("CREATE TABLE IF NOT EXISTS rok_grupe (naziv TEXT PRIMARY KEY, dana INTEGER)")
+    c.execute("CREATE INDEX IF NOT EXISTS istorija_parcela ON istorija(parcela_id)")
+
+
+# v36: promene šeme baze, redom; broj se pamti u PRAGMA user_version. Pre prve nove promene program pravi rezervu
+# rezerve/katastar_pre_vN.db (N = verzija programa koja menja šemu). Nova promena = nova stavka na kraju spiska.
+# Samo NOVE tabele i indeksi (ili kolona u parcele): ako se program vrati na stariju verziju (v34), ona mora da radi
+# sa novom bazom - zato se postojeće tabele ne menjaju (npr. INSERT INTO grupe VALUES (?) u starijim verzijama).
+def _mig_sumnjivo(c):
+    """v37: sumnjiv odgovor sajta (otisak) - isti odgovor u dve uzastopne provere se prihvata kao pravo stanje."""
+    c.execute("CREATE TABLE IF NOT EXISTS sumnjivo (parcela_id INTEGER PRIMARY KEY, otisak TEXT, vreme TEXT)")
+
+
+MIGRACIJE = [(1, "v36", _mig_rok_grupe), (2, "v37", _mig_sumnjivo)]
+
+
 class Baza:
     def __init__(self, path=DB_PATH):
         self.path = path
@@ -1587,11 +1628,43 @@ class Baza:
                     c.execute("ALTER TABLE parcele ADD COLUMN %s TEXT" % k)
             c.execute("UPDATE parcele SET odlozeno_do=NULL WHERE odlozeno_do IS NOT NULL AND odlozeno_do<=?",
                       (dt.date.today().isoformat(),))
+        self._migriraj()
 
+    def _migriraj(self):
+        """v36: promene šeme koje baza još nema, svaka u svojoj transakciji; pre prve rezerva cele baze."""
+        with self._con() as c:
+            stara = c.execute("PRAGMA user_version").fetchone()[0]
+            ima_podataka = c.execute("SELECT EXISTS(SELECT 1 FROM parcele)").fetchone()[0]
+        nove = [m for m in MIGRACIJE if m[0] > stara]
+        if not nove:
+            return
+        if ima_podataka:
+            folder = os.path.join(os.path.dirname(os.path.abspath(self.path)), "rezerve")
+            os.makedirs(folder, exist_ok=True)
+            cilj = os.path.join(folder, "katastar_pre_%s.db" % nove[0][1])
+            if not os.path.exists(cilj):
+                izvor, kopija = sqlite3.connect(self.path), sqlite3.connect(cilj)
+                with kopija:
+                    izvor.backup(kopija)
+                izvor.close()
+                kopija.close()
+                upisi_dnevnik("Baza: rezerva pre promene šeme (%s): %s" % (nove[0][1], cilj))
+        for broj, verzija, fn in nove:
+            with self._con() as c:
+                fn(c)
+                c.execute("PRAGMA user_version=%d" % broj)
+            upisi_dnevnik("Baza: šema %d (%s)" % (broj, verzija))
+
+    @contextlib.contextmanager
     def _con(self):
+        """v36: veza se posle upotrebe i zatvara (ranije je samo potvrđivana transakcija, a veza ostajala otvorena)."""
         c = sqlite3.connect(self.path, timeout=20)
         c.row_factory = sqlite3.Row
-        return c
+        try:
+            with c:
+                yield c
+        finally:
+            c.close()
 
     def podesavanje(self, kljuc, podrazumevano=""):
         with self._con() as c:
@@ -1610,7 +1683,7 @@ class Baza:
                             (opstina_id, opstina, ko_id, ko, broj, klijent, grupa, napomena, sada(),
                              json.dumps(snimak, ensure_ascii=False) if snimak else None, sada() if snimak else None))
             if grupa:
-                c.execute("INSERT OR IGNORE INTO grupe VALUES (?)", (grupa,))
+                c.execute("INSERT OR IGNORE INTO grupe (naziv) VALUES (?)", (grupa,))
             return cur.rowcount > 0
 
     def parcela_po_mestu(self, ko_id, broj):
@@ -1623,7 +1696,7 @@ class Baza:
         with self._con() as c:
             c.execute("UPDATE parcele SET klijent=?, grupa=?, napomena=? WHERE id=?", (klijent, grupa, napomena, pid))
             if grupa:
-                c.execute("INSERT OR IGNORE INTO grupe VALUES (?)", (grupa,))
+                c.execute("INSERT OR IGNORE INTO grupe (naziv) VALUES (?)", (grupa,))
 
     def parcele(self, ids=None):
         with self._con() as c:
@@ -1689,7 +1762,7 @@ class Baza:
         if postojeca:
             return postojeca
         with self._con() as c:
-            c.execute("INSERT OR IGNORE INTO grupe VALUES (?)", (naziv,))
+            c.execute("INSERT OR IGNORE INTO grupe (naziv) VALUES (?)", (naziv,))
         return naziv
 
     def grupisi_po_klijentu(self, klijent=None):
@@ -1735,6 +1808,18 @@ class Baza:
         rez.sort(key=lambda x: srpski_kljuc(x[0]))
         return rez
 
+    def rokovi(self):
+        """v38: {grupa: rok provere u danima}."""
+        with self._con() as c:
+            return {r["naziv"]: r["dana"] for r in c.execute("SELECT naziv, dana FROM rok_grupe WHERE dana > 0")}
+
+    def postavi_rok(self, naziv, dana):
+        with self._con() as c:
+            if dana:
+                c.execute("INSERT OR REPLACE INTO rok_grupe VALUES (?,?)", (naziv, int(dana)))
+            else:
+                c.execute("DELETE FROM rok_grupe WHERE naziv=?", (naziv,))
+
     def preimenuj_grupu(self, stara, nova):
         nova = norm(nova)
         postojeca = self._postojeca(nova)
@@ -1743,10 +1828,14 @@ class Baza:
         with self._con() as c:
             c.execute("UPDATE parcele SET grupa=? WHERE grupa=?", (nova, stara))
             c.execute("DELETE FROM grupe WHERE naziv=?", (stara,))
-            c.execute("INSERT OR IGNORE INTO grupe VALUES (?)", (nova,))
+            c.execute("INSERT OR IGNORE INTO grupe (naziv) VALUES (?)", (nova,))
+            # v38: rok ide uz grupu (u postojeću se prenosi samo ako ona nema svoj)
+            c.execute("UPDATE OR IGNORE rok_grupe SET naziv=? WHERE naziv=?", (nova, stara))
+            c.execute("DELETE FROM rok_grupe WHERE naziv=?", (stara,))
 
     def obrisi_grupu(self, naziv):
         with self._con() as c:
+            c.execute("DELETE FROM rok_grupe WHERE naziv=?", (naziv,))      # v38
             c.execute("UPDATE parcele SET grupa='' WHERE grupa=?", (naziv,))
             c.execute("DELETE FROM grupe WHERE naziv=?", (naziv,))
 
@@ -1780,6 +1869,17 @@ class Baza:
                 c.execute("UPDATE parcele SET snimak=? WHERE id=?", (json.dumps(sn, ensure_ascii=False), pid))
             return len(novo)
 
+    def sumnjivo_ponovljeno(self, pid, otisak):
+        """v37: True ako je isti sumnjiv odgovor stigao i u prethodnoj proveri (onda je to stvarno stanje na sajtu);
+        inače se pamti i vraća False."""
+        with self._con() as c:
+            r = c.execute("SELECT otisak FROM sumnjivo WHERE parcela_id=?", (pid,)).fetchone()
+            if r and r["otisak"] == otisak:
+                c.execute("DELETE FROM sumnjivo WHERE parcela_id=?", (pid,))
+                return True
+            c.execute("INSERT OR REPLACE INTO sumnjivo VALUES (?,?,?)", (pid, otisak, sada()))
+            return False
+
     def obradi(self, p, snimak, mapa=None):
         """Upisuje novu proveru. Vraca (prva, promene). mapa (v22): prate se samo te stavke
         ({ključ u starom snimku: ključ sada}) - samo one se porede, a ključevi se pamte kako se sada zovu."""
@@ -1791,6 +1891,7 @@ class Baza:
                 stari = None
         promene = (poredi_stavke(stari, snimak, mapa) if mapa else poredi(stari, snimak)) if stari else []
         with self._con() as c:
+            c.execute("DELETE FROM sumnjivo WHERE parcela_id=?", (p["id"],))     # v37
             if promene:
                 tekst = "\n".join(promene)
                 pre = c.execute("SELECT promene FROM parcele WHERE id=?", (p["id"],)).fetchone()
@@ -1810,13 +1911,20 @@ class Baza:
                     list(dict.fromkeys(mapa.get(k) or k for k in tren)), ensure_ascii=False) if tren else None, p["id"]))
         return stari is None, promene
 
-    def pretrazi(self, upit):
+    def pretrazi(self, upit, sve=None):
+        """v36: tekst za pretragu (bez obzira na pismo i kvačice) se računa jednom po parceli i pamti dok se parcela
+        ne promeni - ranije se za svako slovo u polju za pretragu ponovo prolazilo kroz sve snimke (0,7 s na 1000
+        parcela, sada 0,01 s). sve = već učitan spisak parcela (da se baza ne čita dvaput)."""
         u = lat(upit)
         ids = set()
-        for p in self.parcele():
-            polja = [p["broj"], p["ko"], p["opstina"], p["klijent"], p["grupa"], p["napomena"], p["promene"] or "",
-                     p["snimak"] or ""]
-            if any(u in lat(x or "") for x in polja):
+        indeks = self.__dict__.setdefault("_indeks", {})
+        for p in (self.parcele() if sve is None else sve):
+            polja = (p["broj"], p["ko"], p["opstina"], p["klijent"], p["grupa"], p["napomena"], p["promene"] or "")
+            kljuc = polja + (hash(p["snimak"] or ""),)      # otisak celog snimka (promena iste dužine)
+            pre = indeks.get(p["id"])
+            if pre is None or pre[0] != kljuc:
+                pre = indeks[p["id"]] = (kljuc, "\n".join(lat(x or "") for x in polja + (p["snimak"] or "",)))
+            if u in pre[1]:
                 ids.add(p["id"])
         return ids
 
@@ -2740,7 +2848,32 @@ def poslovi_pdf(mesta):
 
 # --- v32 (Dejan: "kada ti ubacim ugovor i kazem izvuci sve parcele"): zadatak koji Claude ostavi u folderu zadaci ---
 # {"naziv", "klijent", "grupa" (podrazumevano klijent), "pdf": true, "folder" (gde PDF; inače stalni ili PDF),
-#  "parcele": [{"opstina" ili "opstina_id", "ko" ili "ko_id", "broj", "stan", "ulaz", "napomena"}]}
+#  "postojece": "preskoci" | "premesti" | "proveri" (v35, parcela koja je već u praćenju; podrazumevano preskoci),
+#  "parcele": [{"opstina" ili "opstina_id", "ko" ili "ko_id", "broj", "stan", "ulaz", "napomena",
+#               "klijent", "grupa" (v39: za tu parcelu umesto zajedničkih)}]}
+# v35: zadatak može da stigne i preko Drive-a (folder ASISTENT KATASTAR/zadaci), izveštaj se vraća u izvestaji/ tamo
+POSTOJECE = ("preskoci", "premesti", "proveri")
+DRIVE_FOLDER = "ASISTENT KATASTAR"
+
+
+def nadji_drive_folder():
+    """v35: folder ASISTENT KATASTAR na Google Drive-u (Drive za računare: G:\\My Drive\\...), ili None."""
+    zadat = os.environ.get("KATASTAR_DRIVE")
+    if zadat is not None or TEST_REZIM:
+        return zadat if zadat and os.path.isdir(zadat) else None
+    if os.name == "nt":
+        for slovo in "GHIJKLMNOPQRSTUVWXYZDEF":         # G: je podrazumevano slovo Drive-a za računare
+            if not os.path.isdir(slovo + ":\\"):
+                continue
+            for koren in ("My Drive", "Moj disk", "Мој диск", "Moja disk"):
+                k = os.path.join(slovo + ":\\", koren, DRIVE_FOLDER)
+                if os.path.isdir(k):
+                    return k                            # prvi pronađen; ostala slova se ne gledaju
+    kucni = os.path.expanduser("~")
+    return next((k for k in (os.path.join(kucni, "Google Drive", "My Drive", DRIVE_FOLDER),
+                             os.path.join(kucni, "My Drive", DRIVE_FOLDER)) if os.path.isdir(k)), None)
+
+
 def ucitaj_zadatak(put):
     """JSON zadatak -> dict; ValueError sa razlogom ako nije ispravan."""
     with open(put, encoding="utf-8-sig") as f:
@@ -2754,7 +2887,7 @@ def ucitaj_zadatak(put):
         broj = "".join(str(x.get("broj") or "").split())
         if not re.fullmatch(r"[0-9]{1,6}(/[0-9]{1,3})?", broj):
             raise ValueError("parcela %d: neispravan broj parcele (%s)" % (i, broj or "prazno"))
-        p = {k: norm(str(x.get(k) or "")) for k in ("opstina", "ko", "stan", "ulaz", "napomena")}
+        p = {k: norm(str(x.get(k) or "")) for k in ("opstina", "ko", "stan", "ulaz", "napomena", "klijent", "grupa")}
         for k in ("opstina_id", "ko_id"):
             try:
                 p[k] = int(x[k]) if x.get(k) not in (None, "") else None
@@ -2765,10 +2898,48 @@ def ucitaj_zadatak(put):
         p["broj"] = broj
         parcele.append(p)
     klijent = norm(str(d.get("klijent") or ""))
+    postojece = norm(str(d.get("postojece") or "preskoci")).lower()
+    if postojece not in POSTOJECE:
+        raise ValueError("postojece mora biti %s (a ne %s)" % (", ".join(POSTOJECE), postojece))
     return {"naziv": norm(str(d.get("naziv") or "")) or klijent or os.path.splitext(os.path.basename(put))[0],
             "klijent": klijent, "grupa": norm(str(d.get("grupa") or "")) or klijent,
             "sacuvaj_pdf": d.get("pdf", True) is not False, "folder": str(d.get("folder") or "").strip(),
-            "parcele": parcele}
+            "postojece": postojece, "parcele": parcele}
+
+
+KOLONE_UVOZA = {"opstina": "opstina", "katastarska opstina": "ko", "ko": "ko", "parcela": "broj", "broj": "broj",
+                "broj parcele": "broj", "katastarska parcela": "broj", "klijent": "klijent", "grupa": "grupa",
+                "napomena": "napomena", "stan": "stan", "ulaz": "ulaz"}
+
+
+def procitaj_spisak(tekst):
+    """v39: spisak parcela nalepljen iz Excela (kolone razdvojene tabom) ili CSV (; ili ,) -> (parcele, loše).
+    Prvi red sa nazivima kolona (Opština, KO, Parcela, Klijent, Grupa, Napomena, Stan, Ulaz - bilo kojim redom i
+    pismom); bez njega kolone su: KO, broj parcele, klijent, napomena. Više brojeva u ćeliji ("10383, 10384/1",
+    "100-103") daje više parcela. loše = [(broj reda, red, razlog)]."""
+    redovi = [(i, r) for i, r in enumerate((tekst or "").replace("\r", "").split("\n"), 1) if r.strip()]
+    if not redovi:
+        return [], []
+    razd = "\t" if any("\t" in r for _, r in redovi) else (";" if any(";" in r for _, r in redovi) else ",")
+    tabela = [(i, next(csv.reader([r], delimiter=razd))) for i, r in redovi]     # i = red kao u Excelu
+    glava = [KOLONE_UVOZA.get(" ".join(lat(c).split())) for c in tabela[0][1]]
+    if "broj" in glava and ("ko" in glava or "opstina" in glava):
+        kolone, tabela = glava, tabela[1:]
+    else:
+        kolone = ["ko", "broj", "klijent", "napomena"]
+    parcele, lose = [], []
+    for i, red in tabela:
+        d = {k: norm(red[j]) for j, k in enumerate(kolone) if k and j < len(red) and norm(red[j])}
+        if not d.get("ko"):
+            lose.append((i, razd.join(red), "nema katastarske opštine"))
+            continue
+        brojevi, losi = raspakuj_brojeve(d.get("broj", ""))
+        if losi or not brojevi:
+            lose.append((i, razd.join(red), "neispravan broj parcele: %s" % (", ".join(losi) or "prazno")))
+            continue
+        for b in brojevi:
+            parcele.append(dict(d, broj=b))
+    return parcele, lose
 
 
 def izvestaj_zadatka_tekst(z):
@@ -2778,7 +2949,8 @@ def izvestaj_zadatka_tekst(z):
         red.append("NIJE ZAVRŠEN: %s" % z["greska"])
     for r in z.get("rezultat", []):
         red.append("- %s %s%s: %s%s%s" % (r["ko"], r["broj"], (" stan " + r["stan"]) if r.get("stan") else "",
-                                         r["stanje"], ("; provera: %s" % r["provera"]) if r.get("provera") else "",
+                                         r["stanje"] + (" (nije ponovo proverena)" if r.get("preskocena") else ""),
+                                         ("; provera: %s" % r["provera"]) if r.get("provera") else "",
                                          ("; " + r["napomena"]) if r.get("napomena") else ""))
     pdf = z.get("pdf_rez")
     if pdf:
@@ -3538,6 +3710,66 @@ def citaj_datum(t):
         return None
 
 
+def datum_iz_vremena(t):
+    """v38: '07.01.2026 10:15' (provereno, istorija) -> datum, ili None."""
+    return citaj_datum((t or "").split(" ")[0])
+
+
+def istekao_rok(p, dana, danas=None):
+    """v38: parcela nije proverena u poslednjih `dana` dana (ili nikad)."""
+    d = datum_iz_vremena(p.get("provereno"))
+    return d is None or ((danas or dt.date.today()) - d).days >= dana
+
+
+def izvestaj_promena(parcele, istorija, od, naslov):
+    """v38 (izveštaj za klijenta): sve promene na parcelama od datuma `od` do danas, staro -> novo, po parceli;
+    parcela bez promene u periodu je navedena sa datumom poslednje provere. istorija = {id parcele: [redovi]}.
+    Vraća (html za PDF, redovi za CSV, broj parcela sa promenom)."""
+    e = htmlmod.escape
+    danas = dt.date.today()
+    delovi, csv_redovi, sa_promenom = [], [], 0
+    for p in parcele:
+        zapisi = [r for r in istorija.get(p["id"], []) if (datum_iz_vremena(r["vreme"]) or danas) >= od]
+        zapisi.sort(key=lambda r: (datum_iz_vremena(r["vreme"]) or danas, r["vreme"][11:16], r["id"]))
+        ime = "%s %s" % (p["ko"], p["broj"])
+        dodatak = ", ".join(x for x in (p.get("klijent"), p.get("napomena")) if x)
+        delovi.append('<h2>%s%s</h2>' % (e(ime), (' <span class="siv">(%s)</span>' % e(dodatak)) if dodatak else ""))
+        if not zapisi:
+            delovi.append('<p class="bez">Bez promena u periodu. Poslednja provera: %s</p>' %
+                          e(p.get("provereno") or "nije provereno"))
+            csv_redovi.append([p.get("grupa") or "", p["ko"], p["broj"], p.get("klijent") or "", "", "",
+                               "bez promena", "", p.get("provereno") or ""])
+            continue
+        sa_promenom += 1
+        redovi = []
+        for r in zapisi:
+            for pr in promene_staro_novo(r["tekst"].split("\n")):
+                staro, novo = tekst_delova(pr["staro"]), tekst_delova(pr["novo"])
+                redovi.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+                    e(r["vreme"]), e(pr["gde"]), e(staro), e(novo)))
+                csv_redovi.append([p.get("grupa") or "", p["ko"], p["broj"], p.get("klijent") or "", r["vreme"],
+                                   pr["gde"], staro, novo, p.get("provereno") or ""])
+        delovi.append('<table><tr><th>Datum</th><th>Šta</th><th>Staro stanje</th><th>Novo stanje</th></tr>%s'
+                      '</table>' % "".join(redovi))
+    html = ('<!doctype html><html><head><meta charset="utf-8"><title>%s</title><style>'
+            'body{font-family:"Segoe UI",Arial,sans-serif;font-size:10pt;color:#1f2937;margin:18mm 14mm}'
+            'h1{font-size:15pt;color:#173a7a;margin:0 0 4px}h2{font-size:11pt;margin:16px 0 4px;color:#173a7a}'
+            '.siv{color:#6b7280;font-weight:normal}.bez{color:#17663a;margin:2px 0}'
+            'table{border-collapse:collapse;width:100%%}th,td{border:1px solid #d8dee8;padding:3px 5px;'
+            'vertical-align:top;text-align:left}th{background:#e6ecf6}td:nth-child(3){color:#8a1c1c}'
+            'td:nth-child(4){color:#17663a}td:first-child{white-space:nowrap;width:1%%}@page{size:A4}'
+            '</style></head><body>'
+            '<h1>Izveštaj o promenama: %s</h1><p>Period: %s - %s &middot; parcela: %d, sa promenom: %d</p>%s'
+            '<p class="siv">Asistent KATASTAR %s, podaci sa katastar.rgz.gov.rs (eKatastar)</p></body></html>') % (
+        e(naslov), e(naslov), od.strftime("%d.%m.%Y"), danas.strftime("%d.%m.%Y"), len(parcele), sa_promenom,
+        "".join(delovi), VERZIJA)
+    return html, csv_redovi, sa_promenom
+
+
+IZVESTAJ_CSV_ZAGLAVLJE = ["Grupa", "KO", "Parcela", "Klijent", "Datum promene", "Šta", "Staro stanje", "Novo stanje",
+                          "Poslednja provera"]
+
+
 def srp_datum(iso):
     """'2027-01-07' -> '07.01.2027'"""
     try:
@@ -3810,6 +4042,9 @@ class App:
                      "tiho")
         self.root.after(250, self._ticker)
         self.root.after(2500, self._proveri_precicu)
+        self.root.after(4000, lambda: self.baza.pretrazi("\x00"))   # v36: tekst za pretragu se pripremi unapred
+        self.root.after(6000, self._ponudi_rok)                       # v38: istekao rok provere grupe
+        self.root.after(8000, self._rezerva_na_drive)                 # v39: druga kopija rezerve baze
         self._pokreni_zadatke()               # v32: zadaci od Claude-a (folder zadaci)
 
     # --- meni i trake ----------------------------------------------------
@@ -3824,6 +4059,7 @@ class App:
         m.add_cascade(label="Provera", menu=mp)
         mr = tk.Menu(m, tearoff=0)
         mr.add_command(label="Dodaj parcele u praćenje...", command=self.dodaj_dijalog)
+        mr.add_command(label="Uvezi spisak parcela (Excel, CSV)...", command=self.uvezi_spisak)   # v39
         mr.add_separator()
         mr.add_command(label="Detalji", command=self.detalji)
         mr.add_command(label="Kopiraj broj parcele (KO i broj)", command=lambda: self._kop_pracenja.kopiraj_brojeve())
@@ -3844,13 +4080,17 @@ class App:
         mr.add_command(label="Sačuvaj kao PDF (izabrane parcele ili grupa)", command=lambda: self.pdf_pracenja())
         mr.add_command(label="Folder za PDF izvode...", command=self.izaberi_pdf_folder)
         mr.add_separator()
-        mr.add_command(label="Ukloni izabrane iz praćenja", command=self.ukloni)
+        mr.add_command(label="Ukloni izabrane iz praćenja (u Arhivu; iz Arhive trajno)", command=self.ukloni)
         m.add_cascade(label="Parcela", menu=mr)
         mg = tk.Menu(m, tearoff=0)
         mg.add_command(label="Nova grupa...", command=self.nova_grupa)
         mg.add_command(label="Premesti izabrane u grupu...", command=self.promeni_grupu)
         mg.add_command(label="Preimenuj grupu...", command=self.preimenuj_grupu)
         mg.add_command(label="Obriši grupu", command=self.obrisi_grupu)
+        mg.add_separator()
+        # v38: izveštaj za klijenta samo ovde (desni klik na grupu ostaje kratak)
+        mg.add_command(label="Izveštaj o promenama (grupa ili izabrane)...", command=self.izvestaj_promena)
+        mg.add_command(label="Rok provere grupe...", command=self.rok_grupe)
         mg.add_separator()
         mg.add_command(label="Grupiši parcele istog klijenta (sada)", command=self.grupisi_sada)
         mg.add_checkbutton(label="Automatski grupiši parcele istog klijenta", variable=self.auto_grupe_var)
@@ -3893,6 +4133,7 @@ class App:
         ma.add_command(label="Prikaži sve poruke (dnevnik rada)", command=self.prikazi_dnevnik)
         ma.add_separator()
         ma.add_command(label="Folder za PDF izvode...", command=self.izaberi_pdf_folder)
+        ma.add_command(label="Folder na Drive-u (zadaci, rezerve)...", command=self.izaberi_drive_folder)  # v35
         m.add_cascade(label="Alati", menu=ma)
         self.root.config(menu=m)
 
@@ -3924,6 +4165,55 @@ class App:
         if self.baza.podesavanje("pdf_nacin", "pitaj") == "stalni":
             return self.baza.podesavanje("pdf_folder", "") or PDF_DIR
         return None
+
+    def izaberi_drive_folder(self):
+        """v35: folder ASISTENT KATASTAR na Drive-u: odatle program uzima zadatke od Claude-a (zadaci) i tamo vraća
+        izveštaj; tamo čuva i drugu kopiju rezervi baze. Podrazumevano ga nalazi sam (G:\\My Drive\\ASISTENT KATASTAR)."""
+        d = tk.Toplevel(self.root)
+        d.title("Folder na Drive-u")
+        d.transient(self.root)
+        d.resizable(False, False)
+        f = ttk.Frame(d, padding=px(14))
+        f.pack(fill="both", expand=True)
+        sad = self.baza.podesavanje("drive_folder", "")
+        nacin = tk.StringVar(value="iskljuceno" if sad == "-" else ("izabran" if sad else "auto"))
+        nadjen = nadji_drive_folder()
+        put = tk.StringVar(value=sad if sad not in ("", "-") else (nadjen or ""))
+        ttk.Label(f, text="Folder %s na Google Drive-u (zadaci od Claude-a, rezerve baze)" % DRIVE_FOLDER,
+                  font=FONT_B).grid(row=0, column=0, columnspan=2, sticky="w")
+        ttk.Radiobutton(f, text="Pronađi sam: %s" % (nadjen or "nije pronađen"), variable=nacin,
+                        value="auto").grid(row=1, column=0, columnspan=2, sticky="w", pady=(px(8), 0))
+        ttk.Radiobutton(f, text="Ovaj folder:", variable=nacin, value="izabran").grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(px(6), px(2)))
+        ttk.Entry(f, textvariable=put, width=58, state="readonly").grid(row=3, column=0, sticky="we",
+                                                                        padx=(px(22), px(6)))
+
+        def izaberi():
+            izbor = filedialog.askdirectory(parent=d, mustexist=True, title="Folder %s na Drive-u" % DRIVE_FOLDER,
+                                            initialdir=put.get() if os.path.isdir(put.get()) else DIR)
+            if izbor:
+                put.set(os.path.normpath(izbor))
+                nacin.set("izabran")
+        ttk.Button(f, text="Izaberi...", command=izaberi).grid(row=3, column=1, sticky="w")
+        ttk.Radiobutton(f, text="Ne koristi Drive", variable=nacin, value="iskljuceno").grid(
+            row=4, column=0, columnspan=2, sticky="w", pady=(px(6), 0))
+
+        def ok(_=None):
+            n = nacin.get()
+            self.baza.postavi_podesavanje("drive_folder", "-" if n == "iskljuceno" else (
+                put.get() if n == "izabran" and put.get() else ""))
+            if hasattr(self, "_drive_nadjen"):
+                del self._drive_nadjen
+            d.destroy()
+            dd = self.drive_folder()
+            self.log("Folder na Drive-u: %s" % (dd or "ne koristi se"), "info")
+        dugmad = ttk.Frame(f)
+        dugmad.grid(row=5, column=0, columnspan=2, sticky="e", pady=(px(12), 0))
+        ttk.Button(dugmad, text="U redu", command=ok).pack(side="left", padx=px(4))
+        ttk.Button(dugmad, text="Otkaži", command=d.destroy).pack(side="left")
+        d.bind("<Return>", ok)
+        d.bind("<Escape>", lambda e: d.destroy())
+        d.grab_set()
 
     def izaberi_pdf_folder(self):
         """Folder za PDF...: pitaj pri svakom cuvanju (podrazumevano) ili uvek isti folder."""
@@ -4116,21 +4406,105 @@ class App:
             upisi_dnevnik(traceback.format_exc())
         self.root.after(ZADACI_TIK_MS, self._tik_zadataka)
 
+    # v35: folder na Drive-u (ASISTENT KATASTAR) - zadaci od Claude-a stižu tamo, a tamo se vraća i izveštaj
+    def drive_folder(self):
+        """Folder ASISTENT KATASTAR na Drive-u: izabran u Alati > Folder na Drive-u, ili pronađen sam; None = nema."""
+        izbor = self.baza.podesavanje("drive_folder", "")
+        if izbor == "-":
+            return None
+        if izbor:
+            return izbor if os.path.isdir(izbor) else None
+        if not hasattr(self, "_drive_nadjen"):
+            # traži se u pozadini (nepovezan mrežni disk ume da zadrži proveru slova diska nekoliko sekundi)
+            self._drive_nadjen = None
+            threading.Thread(target=lambda: setattr(self, "_drive_nadjen", nadji_drive_folder()), daemon=True).start()
+        return self._drive_nadjen
+
+    def _rezerva_na_drive(self):
+        """v39: današnja rezerva baze (rezerve/katastar_GGGGMMDD.db) i u Drive folder "rezerve baze" - za slučaj
+        kvara diska; tamo se čuva poslednjih 10. U pozadini (kopiranje na G: može da potraje)."""
+        d = self.drive_folder()
+        if not d:
+            return
+        cilj = os.path.join(d, "rezerve baze")
+        izvor = os.path.join(REZERVE_DIR, "katastar_%s.db" % dt.date.today().strftime("%Y%m%d"))
+
+        def nit():
+            try:
+                if not os.path.exists(izvor):
+                    return
+                os.makedirs(cilj, exist_ok=True)
+                kopija = os.path.join(cilj, os.path.basename(izvor))
+                if not os.path.exists(kopija):
+                    shutil.copy2(izvor, kopija + ".tmp")
+                    os.replace(kopija + ".tmp", kopija)
+                stare = sorted(f for f in os.listdir(cilj) if re.fullmatch(r"katastar_\d{8}\.db", f))
+                for f in stare[:-10]:
+                    os.remove(os.path.join(cilj, f))
+            except OSError as e:
+                upisi_dnevnik("Rezerva na Drive-u: %r" % (e,))
+        threading.Thread(target=nit, daemon=True).start()
+
+    def drive_zadaci(self):
+        d = self.drive_folder()
+        if not d:
+            return None
+        z = os.path.join(d, "zadaci")
+        try:
+            os.makedirs(z, exist_ok=True)
+        except OSError:
+            return None
+        return z
+
+    def _uzmi_sa_drive(self):
+        """Prvi zadatak iz Drive foldera ide u lokalni zadaci/u radu (ime počinje sa drive__: izveštaj ide i na Drive).
+        Vraća ime fajla u 'u radu' ili None."""
+        self._drive_tik = getattr(self, "_drive_tik", 0) + 1
+        if self._drive_tik % 3 != 1:          # Drive se gleda na svakih 15 s (lokalni folder na 5 s)
+            return None
+        dz = self.drive_zadaci()
+        if not dz:
+            return None
+        try:
+            imena = sorted(f for f in os.listdir(dz) if f.lower().endswith(".json") and not f.startswith("."))
+        except OSError:
+            return None
+        if not imena:
+            return None
+        u_radu = os.path.join(ZADACI_DIR, "u radu")
+        os.makedirs(u_radu, exist_ok=True)
+        ime = "drive__" + imena[0]
+        try:
+            shutil.copy2(os.path.join(dz, imena[0]), os.path.join(u_radu, ime))
+            os.remove(os.path.join(dz, imena[0]))
+        except OSError as e:
+            upisi_dnevnik("ZADACI (Drive): %r" % (e,))
+            return None
+        return ime
+
     def _proveri_zadatke(self):
-        """Na svakih nekoliko sekundi: ako program ne radi ništa drugo, uzima prvi zadatak iz foldera zadaci."""
+        """Na svakih nekoliko sekundi: ako program ne radi ništa drugo, uzima prvi zadatak iz foldera zadaci
+        (v35: ili iz foldera zadaci na Drive-u)."""
         if self._zadatak is not None or self.posao is not None or getattr(self, "_pdf_radi", False):
             return
         try:
             imena = sorted(f for f in os.listdir(ZADACI_DIR) if f.lower().endswith(".json"))
         except OSError:
             return
-        if not imena:
-            return
         u_radu = os.path.join(ZADACI_DIR, "u radu")
-        os.makedirs(u_radu, exist_ok=True)
-        put = os.path.join(u_radu, imena[0])
-        os.replace(os.path.join(ZADACI_DIR, imena[0]), put)
-        z = {"fajl": imena[0], "put": put, "naziv": os.path.splitext(imena[0])[0], "rezultat": [], "provera": {}}
+        if imena:
+            os.makedirs(u_radu, exist_ok=True)
+            ime = imena[0]
+            os.replace(os.path.join(ZADACI_DIR, ime), os.path.join(u_radu, ime))
+        else:
+            ime = self._uzmi_sa_drive()
+            if not ime:
+                return
+        put = os.path.join(u_radu, ime)
+        sa_drive = ime.startswith("drive__")
+        ime = ime[len("drive__"):] if sa_drive else ime
+        z = {"fajl": ime, "put": put, "naziv": os.path.splitext(ime)[0], "rezultat": [], "provera": {},
+             "sa_drive": sa_drive, "postojece": "preskoci"}
         try:
             z.update(ucitaj_zadatak(put))
         except (OSError, ValueError) as e:
@@ -4199,7 +4573,8 @@ class App:
         """Parcele iz zadatka u praćenje (grupa klijenta; stan iz ugovora = prati se samo on), pa provera."""
         if self._zadatak is not z:
             return
-        pids, novi = [], set()
+        pids, novi, vidjene = [], set(), []
+        z["preskoceno"] = 0
         for x in z["parcele"]:
             r = {"ko": x["ko"] or str(x["ko_id"]), "broj": x["broj"], "stan": x["stan"], "ulaz": x["ulaz"]}
             z["rezultat"].append(r)
@@ -4209,7 +4584,9 @@ class App:
                 continue
             oid, opstina, ko_id, ko = m
             r["ko"] = ko
-            novo = self.baza.dodaj(oid, opstina, ko_id, ko, x["broj"], klijent=z["klijent"], grupa=z["grupa"],
+            klijent = x.get("klijent") or z["klijent"]          # v39: uvoz spiska - klijent i grupa po parceli
+            grupa = x.get("grupa") or z["grupa"] or x.get("klijent") or ""
+            novo = self.baza.dodaj(oid, opstina, ko_id, ko, x["broj"], klijent=klijent, grupa=grupa,
                                    napomena=x["napomena"])
             p = self.baza.parcela_po_mestu(ko_id, x["broj"])
             if p is None:
@@ -4221,7 +4598,7 @@ class App:
                 novi.add(p["id"])
                 if x["stan"]:
                     self.baza.postavi_stavke(p["id"], [kljuc_stana(x["stan"], x["ulaz"])])
-            elif p["id"] in pids:            # ista parcela još jednom (npr. dva stana u istoj zgradi)
+            elif p["id"] in vidjene:         # ista parcela još jednom (npr. dva stana u istoj zgradi)
                 r["stanje"] = "ista parcela kao gore"
                 prate = pracene_stavke(p)
                 if p["id"] in novi and prate:
@@ -4229,12 +4606,24 @@ class App:
                                              else [])
                 continue
             else:
+                # v35 (Dejan: "neke su već u aplikaciji, neću duplikate"): parcela koja je već u praćenju se ne
+                # dodaje ponovo i podrazumevano se ne proverava; "premesti" je prebacuje u grupu zadatka
                 r["stanje"] = "već je bila u praćenju" + ((", grupa %s" % p["grupa"]) if p["grupa"] else "")
+                if z["postojece"] == "premesti" and grupa and lat(p["grupa"]) != lat(grupa):
+                    self.baza.promeni_grupu([p["id"]], grupa)
+                    r["stanje"] += " - premeštena u grupu %s" % (self.baza.parcela_po_mestu(ko_id, x["broj"])["grupa"])
+                if z["postojece"] != "proveri":
+                    r["preskocena"] = True
+                    z["preskoceno"] += 1
+                    vidjene.append(p["id"])
+                    continue
+            vidjene.append(p["id"])
             pids.append(p["id"])
         z["pids"] = pids
         self.osvezi_listu()
         if not pids:
-            z["greska"] = "nijedna parcela nije dodata"
+            if not z["preskoceno"]:
+                z["greska"] = "nijedna parcela nije dodata"
             self._zavrsi_zadatak(z)
             return
         po_id = {p["id"]: p for p in self.baza.parcele(pids)}
@@ -4298,7 +4687,8 @@ class App:
             with open(os.path.join(ZADACI_DIR, "izvestaji", osnova + ".txt"), "w", encoding="utf-8") as f:
                 f.write(tekst)
             with open(os.path.join(ZADACI_DIR, "izvestaji", osnova + ".json"), "w", encoding="utf-8") as f:
-                json.dump({k: z.get(k) for k in ("naziv", "klijent", "grupa", "greska", "rezultat", "pdf_rez")},
+                json.dump({k: z.get(k) for k in ("naziv", "klijent", "grupa", "greska", "rezultat", "pdf_rez",
+                                                 "preskoceno")},
                           f, ensure_ascii=False, indent=1)
             cilj, k = os.path.join(ZADACI_DIR, "obradjeni", z["fajl"]), 2
             while os.path.exists(cilj):
@@ -4307,11 +4697,22 @@ class App:
                 os.replace(z["put"], cilj)
         except OSError as e:
             upisi_dnevnik("ZADATAK IZVESTAJ: %r" % (e,))
-        rez = z.get("rezultat", [])
+        if z.get("sa_drive"):                 # v35: izveštaj i u folder na Drive-u (tamo ga čita Claude)
+            dz = self.drive_zadaci()
+            try:
+                if dz:
+                    os.makedirs(os.path.join(dz, "izvestaji"), exist_ok=True)
+                    for ext in (".txt", ".json"):
+                        shutil.copy(os.path.join(ZADACI_DIR, "izvestaji", osnova + ext),
+                                    os.path.join(dz, "izvestaji", osnova + ext))
+            except OSError as e:
+                upisi_dnevnik("ZADATAK IZVESTAJ (Drive): %r" % (e,))
+        rez = [r for r in z.get("rezultat", []) if not r.get("preskocena")]
         ok = sum(r.get("provera") == "skinuto sa sajta" for r in rez)
         pdf = z.get("pdf_rez") or {}
-        sazetak = "skinuto %d od %d%s%s" % (ok, len(rez), (", PDF %d" % pdf["sacuvano"]) if pdf else "",
-                                            (" - " + z["greska"]) if z.get("greska") else "")
+        sazetak = "skinuto %d od %d%s%s%s" % (ok, len(rez), (", PDF %d" % pdf["sacuvano"]) if pdf else "",
+                                              (", već u praćenju %d" % z["preskoceno"]) if z.get("preskoceno") else "",
+                                              (" - " + z["greska"]) if z.get("greska") else "")
         self.log("--- Zadatak %s: %s ---" % (z["naziv"], sazetak),
                  "neuspeh_naslov" if z.get("greska") or ok < len(rez) else "uspeh")
         self.lbl_opis.configure(text="Zadatak %s: %s" % (z["naziv"], sazetak))
@@ -5059,7 +5460,7 @@ class App:
         self.tree.delete(*self.tree.get_children(""))
         sve = self.baza.parcele()
         upit = self.upit_var.get().strip()
-        pogoci = self.baza.pretrazi(upit) if upit else None
+        pogoci = self.baza.pretrazi(upit, sve) if upit else None
         prikaz = self.prikaz_var.get()
         if prikaz not in PRIKAZI:
             prikaz = PRIKAZI[0]
@@ -5140,6 +5541,7 @@ class App:
                              tags=(self._tag(BG_PROMENA if novo_sesija else None, fg,
                                              novo_sesija or bool(p["promene"])),))
 
+        rokovi = self.baza.rokovi()
         for g in sorted((x for x in po_grupi if x != BEZ_GRUPE), key=srpski_kljuc):
             lst = po_grupi[g]
             giid = "g:" + g
@@ -5150,7 +5552,8 @@ class App:
             n_odl, n_arh = sum(odlozen(p) for p in lst), sum(arhiviran(p) for p in lst)
             opis = "  ·  ".join(
                 (["provereno u ovoj sesiji: %d/%d" % (danas_ok, len(aktivni))] if aktivni or not lst else []) +
-                (["odloženo: %d" % n_odl] if n_odl else []) + (["u arhivi: %d" % n_arh] if n_arh else []))
+                (["odloženo: %d" % n_odl] if n_odl else []) + (["u arhivi: %d" % n_arh] if n_arh else []) +
+                (["rok: %d d" % rokovi[g]] if g in rokovi else []))
             promena = ("PROMENA: %s" % br_parcela(u_sesiji)) if u_sesiji else \
                 ("nepregledano: %s" % br_parcela(nepregl)) if nepregl else ""
             self.tree.insert("", "end", iid=giid, text="%s  (%d)" % (g, len(lst)),
@@ -5350,7 +5753,8 @@ class App:
             if any(not aktivan(p) for p in sel):
                 m.add_command(label="Vrati u redovnu proveru" + vise, command=lambda: self.vrati_u_proveru(ids))
             m.add_separator()
-            m.add_command(label="Ukloni iz praćenja" + vise, command=self.ukloni)
+            m.add_command(label=("Obriši trajno" if all(arhiviran(p) for p in sel) else "Ukloni iz praćenja") + vise,
+                          command=self.ukloni)
         try:
             m.tk_popup(e.x_root, e.y_root)
         finally:
@@ -5550,6 +5954,80 @@ class App:
         self.root.wait_window(d)
         return rez.get("v")
 
+    def uvezi_spisak(self):
+        """v39: spisak parcela iz Excela (Kopiraj -> Nalepi) ili CSV fajla ide u praćenje kao zadatak: KO se nalazi
+        isto kao za ugovor, parcele koje su već u praćenju se preskaču, nove se odmah skidaju sa sajta."""
+        d = tk.Toplevel(self.root)
+        d.title("Uvezi spisak parcela")
+        d.transient(self.root)
+        f = ttk.Frame(d, padding=px(12))
+        f.pack(fill="both", expand=True)
+        ttk.Label(f, text="Nalepi kolone iz Excela (prvi red: Opština, KO, Parcela, Klijent, Grupa, Napomena)\n"
+                          "ili bez naslova: KO, broj parcele, klijent, napomena.").pack(anchor="w")
+        txt = tk.Text(f, width=80, height=14, font=FONT, undo=True)
+        txt.pack(fill="both", expand=True, pady=px(6))
+        red = ttk.Frame(f)
+        red.pack(fill="x")
+        ttk.Label(red, text="Grupa (za redove bez nje):").pack(side="left")
+        grupa = tk.StringVar()
+        ttk.Combobox(red, textvariable=grupa, values=self.baza.grupe(), width=28).pack(side="left", padx=px(6))
+        stanje = ttk.Label(f, text="", foreground=T_SIVO)
+        stanje.pack(anchor="w", pady=(px(6), 0))
+
+        def otvori():
+            put = filedialog.askopenfilename(parent=d, title="CSV spisak parcela",
+                                             filetypes=[("CSV", "*.csv"), ("Tekst", "*.txt"), ("Svi", "*.*")])
+            if put:
+                for kod in ("utf-8-sig", "cp1250"):
+                    try:
+                        with open(put, encoding=kod) as fa:
+                            sadrzaj = fa.read()
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                txt.delete("1.0", "end")
+                txt.insert("1.0", sadrzaj)
+                pregled()
+
+        def pregled(_=None):
+            parcele, lose = procitaj_spisak(txt.get("1.0", "end"))
+            stanje.configure(text="Parcela: %d%s" % (len(parcele), ("; neispravnih redova: %d (red %s)" % (
+                len(lose), ", ".join(str(x[0]) for x in lose[:8]))) if lose else ""),
+                foreground=BOJA_NEUSPEH if lose else T_SIVO)
+            return parcele, lose
+
+        def uvezi():
+            parcele, lose = pregled()
+            if not parcele:
+                messagebox.showinfo("Uvoz", "Nema parcela za uvoz.", parent=d)
+                return
+            if lose and not messagebox.askyesno("Uvoz", "%d red(ova) nije ispravno i neće biti uvezeno:\n%s\n\n"
+                                                "Uvesti ostale (%s)?" % (len(lose), "\n".join(
+                                                    "red %d: %s" % (x[0], x[2]) for x in lose[:8]),
+                                                    br_parcela(len(parcele))), parent=d):
+                return
+            ime = "uvoz %s.json" % dt.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+            zad = {"naziv": "Uvoz spiska (%s)" % br_parcela(len(parcele)), "grupa": norm(grupa.get()),
+                   "pdf": False, "parcele": parcele}
+            os.makedirs(ZADACI_DIR, exist_ok=True)
+            with open(os.path.join(ZADACI_DIR, ime + ".tmp"), "w", encoding="utf-8") as fz:
+                json.dump(zad, fz, ensure_ascii=False, indent=1)
+            os.replace(os.path.join(ZADACI_DIR, ime + ".tmp"), os.path.join(ZADACI_DIR, ime))
+            d.destroy()
+            self.log("Uvoz: %s ide u praćenje (već praćene se preskaču, nove se skidaju sa sajta)." %
+                     br_parcela(len(parcele)), "info")
+        dugmad = ttk.Frame(f)
+        dugmad.pack(fill="x", pady=(px(10), 0))
+        ttk.Button(dugmad, text="Otvori CSV...", command=otvori).pack(side="left")
+        ttk.Button(dugmad, text="Otkaži", command=d.destroy).pack(side="right")
+        ttk.Button(dugmad, text="Uvezi", command=uvezi).pack(side="right", padx=px(6))
+        txt.bind("<KeyRelease>", pregled)
+        txt.bind("<<Paste>>", lambda e: d.after(50, pregled))
+        d.bind("<Escape>", lambda e: d.destroy())
+        txt.focus_set()
+        d._uvezi, d._txt, d._grupa = uvezi, txt, grupa        # za test
+        self._uvoz_prozor = d
+
     def dodaj_dijalog(self):
         d = tk.Toplevel(self.root)
         d.title("Dodaj parcele u praćenje")
@@ -5643,11 +6121,21 @@ class App:
             self.osvezi_listu()
 
     def ukloni(self):
+        """v36: "Ukloni iz praćenja" premešta u Arhivu (ništa se ne gubi); parcele koje su već u Arhivi se odatle
+        brišu trajno, zajedno sa istorijom promena (uz potvrdu)."""
         ids = self.izabrani_ids()
         if not ids:
             return
-        if messagebox.askyesno("Ukloni", "Ukloniti %d parcel%s iz praćenja (i istoriju promena)?"
-                               % (len(ids), "u" if len(ids) == 1 else "e")):
+        sel = self.baza.parcele(ids)
+        aktivne = [p["id"] for p in sel if not arhiviran(p)]
+        if aktivne:
+            self.baza.arhiviraj(aktivne)
+            self.osvezi_listu()
+            self._javi("Uklonjeno iz praćenja: %s - u Arhivi su (Prikaz -> Arhiva); trajno brisanje je odatle." %
+                       br_parcela(len(aktivne)))
+            return
+        if messagebox.askyesno("Obriši trajno", "Trajno obrisati %s iz Arhive, zajedno sa istorijom promena?\n"
+                               "Ovo se ne može vratiti." % br_parcela(len(ids))):
             self.baza.ukloni(ids)
             self.osvezi_listu()
 
@@ -5660,6 +6148,118 @@ class App:
             messagebox.showinfo(naslov, "Nema grupa.")
             return None
         return simpledialog.askstring(naslov, "Naziv grupe:\n" + ", ".join(g), parent=self.root)
+
+    # --- v38: rok provere po grupi i izveštaj o promenama za klijenta ---
+    def rok_grupe(self):
+        g = self._izaberi_grupu("Rok provere grupe")
+        if not g:
+            return
+        g = self.baza._postojeca(g) or g
+        sad = self.baza.rokovi().get(g, 0)
+        n = simpledialog.askinteger("Rok provere grupe", "Grupa %s: proveravaj na svakih koliko dana?\n"
+                                    "(0 = bez roka; kad rok istekne, program pri pokretanju ponudi proveru)" % g,
+                                    parent=self.root, initialvalue=sad, minvalue=0, maxvalue=3650)
+        if n is None:
+            return
+        self.baza.postavi_rok(g, n)
+        self.osvezi_listu()
+        self._javi("Grupa %s: %s." % (g, ("rok provere %d dana" % n) if n else "bez roka provere"))
+
+    def parcele_isteklog_roka(self):
+        rokovi = self.baza.rokovi()
+        return [p for p in self.baza.parcele() if aktivan(p) and p["grupa"] in rokovi and
+                istekao_rok(p, rokovi[p["grupa"]])]
+
+    def _ponudi_rok(self):
+        """Pri pokretanju (jednom): ako je kod neke grupe istekao rok provere, ponudi proveru tih parcela."""
+        if self.posao is not None or self._zadatak is not None:
+            self.root.after(60000, self._ponudi_rok)
+            return
+        try:
+            istekle = self.parcele_isteklog_roka()
+        except Exception:
+            upisi_dnevnik(traceback.format_exc())
+            return
+        if not istekle:
+            return
+        grupe = list(dict.fromkeys(p["grupa"] for p in istekle))
+        if messagebox.askyesno("Rok provere", "Istekao je rok provere za %s (grupe: %s).\nProveriti ih sada?" % (
+                br_parcela(len(istekle)), ", ".join(grupe[:6]) + (" ..." if len(grupe) > 6 else ""))):
+            self.proveri(False, ids=[p["id"] for p in istekle])
+
+    def izvestaj_promena(self, ids=None, naziv=None):
+        """Izveštaj o promenama (PDF za klijenta i CSV za Excel): grupa ili izabrane parcele, od datuma do danas."""
+        if ids is None:
+            sel = self.tree.selection()
+            if sel and sel[0].startswith("g:"):
+                ids = [int(c) for c in self.tree.get_children(sel[0])]
+                naziv = None if sel[0][2:] == BEZ_GRUPE else sel[0][2:]
+            else:
+                ids = self.izabrani_ids()
+        if not ids:
+            messagebox.showinfo("Izveštaj o promenama", "Izaberi grupu (klijenta) ili parcele u listi praćenja.")
+            return
+        parcele = self.baza.parcele(ids)
+        naziv = naziv or (parcele[0]["grupa"] if len({p["grupa"] for p in parcele}) == 1 and parcele[0]["grupa"]
+                          else br_parcela(len(parcele)))
+        pocetak = (dt.date.today() - dt.timedelta(days=30)).strftime("%d.%m.%Y")
+        t = simpledialog.askstring("Izveštaj o promenama", "%s: promene od datuma (dd.mm.gggg):" % naziv,
+                                   parent=self.root, initialvalue=pocetak)
+        if t is None:
+            return
+        od = citaj_datum(t)
+        if od is None:
+            messagebox.showwarning("Izveštaj o promenama", "Datum nije ispravan: %s" % t)
+            return
+        osnova = self.pdf_folder() or (self.baza.podesavanje("pdf_folder", "") or PDF_DIR)
+        put = filedialog.asksaveasfilename(
+            parent=self.root, title="Sačuvaj izveštaj o promenama", defaultextension=".pdf",
+            initialdir=osnova if os.path.isdir(osnova) else DIR, filetypes=[("PDF", "*.pdf")],
+            initialfile=ime_fajla("Promene %s od %s.pdf" % (naziv, od.strftime("%d.%m.%Y"))))
+        if not put:
+            return
+        html, redovi, n = izvestaj_promena(parcele, {p["id"]: self.baza.istorija(p["id"]) for p in parcele}, od,
+                                           naziv)
+        csv_put = os.path.splitext(put)[0] + ".csv"
+        with open(csv_put, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(IZVESTAJ_CSV_ZAGLAVLJE)
+            w.writerows(redovi)
+        self.log("Izveštaj o promenama %s (od %s): %s, sa promenom %d. Pravim PDF..." % (
+            naziv, od.strftime("%d.%m.%Y"), br_parcela(len(parcele)), n), "info")
+
+        def nit():
+            pregledac = nadji_pregledac()
+            gotov = None
+            try:
+                if pregledac:
+                    profil = tempfile.mkdtemp(prefix="katastar_izv_")
+                    try:
+                        izvor_html = os.path.join(profil, "izvestaj.html")
+                        with open(izvor_html, "w", encoding="utf-8") as f:
+                            f.write(html)
+                        if html_u_pdf(pregledac, izvor_html, put, profil):
+                            gotov = put
+                    finally:
+                        shutil.rmtree(profil, ignore_errors=True)
+                if gotov is None:             # bez Edge/Chrome: izveštaj kao HTML (otvara se u pregledaču)
+                    gotov = os.path.splitext(put)[0] + ".html"
+                    with open(gotov, "w", encoding="utf-8") as f:
+                        f.write(html)
+            except Exception:
+                upisi_dnevnik("IZVESTAJ: " + traceback.format_exc())
+            self.root.after(0, self._izvestaj_gotov, gotov, csv_put)
+        threading.Thread(target=nit, daemon=True).start()
+
+    def _izvestaj_gotov(self, put, csv_put):
+        if not put:
+            self.log("Izveštaj o promenama nije napravljen (vidi dnevnik).", "neuspeh")
+            return
+        self.log("Izveštaj o promenama: %s (i %s)" % (put, os.path.basename(csv_put)), "uspeh")
+        try:
+            os.startfile(put)
+        except (AttributeError, OSError):
+            pass
 
     def nova_grupa(self):
         n = simpledialog.askstring("Nova grupa", "Naziv grupe:", parent=self.root)
@@ -6654,13 +7254,15 @@ class App:
                                            "Izaberi samu parcelu (red) ako želiš da je proveriš.")
         return parcele or None
 
-    def proveri(self, samo_izabrane, neaktivni=False):
+    def proveri(self, samo_izabrane, neaktivni=False, ids=None):
         """samo_izabrane: izabrane u listi; neaktivni: samo odložene i arhivirane; inače "Proveri sve"
-        (bez odloženih i arhiviranih)."""
+        (bez odloženih i arhiviranih). v38: ids = baš te parcele (istekao rok provere)."""
         if self.posao:
             return
         preskoceno = []
-        if samo_izabrane:
+        if ids:
+            parcele = self.baza.parcele(ids)
+        elif samo_izabrane:
             parcele = self._izabrani_za_proveru()
             if not parcele:
                 return
@@ -6787,6 +7389,22 @@ class App:
                 for k, k2 in (mapa or {}).items():    # preimenovana praćena stavka: stari naziv ne ostaje u snimku
                     if k2 and k2 != k and k2 in podaci.get("nepokretnost", {}):
                         sn["nepokretnost"].pop(k, None)
+            sumnja = sumnjiv_snimak(stari_sn, sn, podaci.get("nepokretnost") or {})
+            if sumnja and not self.baza.sumnjivo_ponovljeno(p["id"], otisak_snimka(sn)):
+                # v37: okrnjen odgovor sajta ne postaje promena; stanje ostaje staro. Ako isti odgovor stigne i u
+                # sledećoj proveri, prihvata se kao pravo stanje (npr. zgrada stvarno srušena).
+                razlog = "sumnjiv odgovor sajta: %s - stanje nije menjano, proveri ponovo" % sumnja
+                self.baza.zabelezi_neuspeh(p["id"], razlog)
+                self.log("%s: %s" % (naslov, razlog), "neuspeh")
+                if self.posao is not None:
+                    self.posao.ok -= 1
+                    self.posao.neuspeli.append((naslov, razlog))
+                if z.get("zadatak") and self._zadatak is not None:
+                    self._zadatak["provera"][p["id"]] = razlog
+                if ceka:
+                    ceka["rez"] = ("nije", razlog)
+                self.osvezi_listu()
+                return
             prva, promene = self.baza.obradi(p, sn, mapa)
             if ceka:
                 ceka["rez"] = ("prva",) if prva else ("promena", promene) if promene else ("ok",)
@@ -7281,16 +7899,22 @@ def postavi_ostru_ikonu(root, ikona):
         pass
 
 
-def azuriraj_sa_githuba():
-    """v33: ako je folder programa povezan sa GitHub-om (.git), preuzima novu verziju (git pull --ff-only). Ako je
-    stigla nova verzija, stari asistent_katastar.py ide u rezerve/ i program se ponovo pokrece. Baza, rezerve, zadaci,
-    izvodi i PDF nisu u repozitorijumu, pa ih pull ne dira. Bez mreze, bez Git-a ili kod lokalnih izmena: radi
-    postojeca verzija (razlog u dnevnik.txt)."""
-    if "--bez-azuriranja" in sys.argv or os.environ.get("KATASTAR_TEST"):
+LOSA_VERZIJA = "losa_verzija.txt"        # v34: u rezerve/ - commit koji nije prošao probni start (ne preuzima se)
+NOVA_VERZIJA = "nova_verzija.txt"        # v34: u rezerve/ - dok nova verzija ne proradi: commit na koji se vraća
+
+
+def mreza_dostupna(host="github.com", port=443, cekaj=3):
+    """v34: brza provera pre git-a (bez mreže program je čekao do 25 s)."""
+    import socket
+    try:
+        socket.create_connection((host, port), timeout=cekaj).close()
+        return True
+    except OSError:
         return False
-    if not os.path.isdir(os.path.join(DIR, ".git")):
-        return False
-    kw = {"cwd": DIR, "capture_output": True, "timeout": 25, "env": dict(os.environ, GIT_TERMINAL_PROMPT="0")}
+
+
+def _git_komanda(cekaj=25):
+    kw = {"cwd": DIR, "capture_output": True, "timeout": cekaj, "env": dict(os.environ, GIT_TERMINAL_PROMPT="0")}
     if sys.platform == "win32":
         kw["creationflags"] = 0x08000000  # CREATE_NO_WINDOW
 
@@ -7299,43 +7923,164 @@ def azuriraj_sa_githuba():
         if bajtovi:
             return subprocess.run(["git"] + list(a), **kw)
         return subprocess.run(["git"] + list(a), encoding="utf-8", errors="replace", **kw)
+    return git
 
+
+def probni_start(putanja_programa, cekaj=120):
+    """v34: nova verzija se pre pravog pokretanja pokrene na KOPIJI podataka (baza, šifarnik, uzorci captche) u
+    privremenom folderu: učita se, otvori prozor (nevidljiv) i zatvori. Tako se pre prvog pravog pokretanja vidi i
+    greška u kodu i greška u promeni šeme baze, a pravi podaci ostaju netaknuti. Vraća (True, '') ili (False, razlog)."""
+    privremeni = tempfile.mkdtemp(prefix="katastar_proba_")
+    try:
+        if os.path.exists(DB_PATH):
+            izvor, c = sqlite3.connect(DB_PATH), sqlite3.connect(os.path.join(privremeni, "katastar.db"))
+            with c:
+                izvor.backup(c)
+            izvor.close()
+            c.close()
+        for ime in ("sifarnik_ko.json", "uzorci_captcha.json"):
+            if os.path.exists(os.path.join(DIR, ime)):
+                shutil.copy(os.path.join(DIR, ime), privremeni)
+        kw = {"capture_output": True, "timeout": cekaj, "cwd": privremeni,
+              "env": dict(os.environ, KATASTAR_DIR=privremeni)}
+        if sys.platform == "win32":
+            kw["creationflags"] = 0x08000000
+        r = subprocess.run([sys.executable, putanja_programa, "--bez-azuriranja", "--probni-start"], **kw)
+        if r.returncode != 0:
+            izlaz = (r.stderr or r.stdout or b"").decode("utf-8", "replace").strip()
+            return False, "probni start nije prošao (kod %d): %s" % (r.returncode, izlaz[-800:])
+        return True, ""
+    except subprocess.TimeoutExpired:
+        return False, "probni start nije završen za %d s" % cekaj
+    except Exception:
+        return False, "probni start: " + traceback.format_exc()[-800:]
+    finally:
+        shutil.rmtree(privremeni, ignore_errors=True)
+
+
+def vrati_staru_verziju(stari, razlog, git=None):
+    """v34: nova verzija ne radi -> nazad na commit `stari`, a nova se pamti kao loša (ne preuzima se ponovo dok na
+    GitHub-u ne bude novija). git reset dira samo fajlove programa: baza, rezerve, zadaci, izvodi i PDF nisu u Git-u."""
+    git = git or _git_komanda()
+    novi = git("rev-parse", "HEAD").stdout.strip()
+    r = git("reset", "--hard", "-q", stari)
+    try:
+        os.makedirs(REZERVE_DIR, exist_ok=True)
+        with open(os.path.join(REZERVE_DIR, LOSA_VERZIJA), "w", encoding="utf-8") as f:
+            f.write(novi + "\n")
+        if os.path.exists(os.path.join(REZERVE_DIR, NOVA_VERZIJA)):
+            os.remove(os.path.join(REZERVE_DIR, NOVA_VERZIJA))
+    except OSError:
+        pass
+    upisi_dnevnik("GitHub: nova verzija %s NE RADI, vraćena %s (%s): %s" % (
+        novi[:8], stari[:8], "uspelo" if r.returncode == 0 else "NIJE USPELO: " + r.stderr.strip()[:200], razlog))
+    return r.returncode == 0
+
+
+def azuriraj_sa_githuba():
+    """v33: ako je folder programa povezan sa GitHub-om (.git), preuzima novu verziju. Ako je stigla nova verzija,
+    stari asistent_katastar.py ide u rezerve/ i program se ponovo pokrece. Baza, rezerve, zadaci, izvodi i PDF nisu
+    u repozitorijumu, pa ih pull ne dira. Bez mreze, bez Git-a ili kod lokalnih izmena: radi postojeca verzija
+    (razlog u dnevnik.txt).
+    v34: pre pokretanja nova verzija prolazi probni start na kopiji podataka; ako ne prođe, vraća se stara, a nova se
+    ne preuzima ponovo dok na GitHub-u ne bude novija. Bez mreže se ne čeka (provera za 3 s)."""
+    if "--bez-azuriranja" in sys.argv or os.environ.get("KATASTAR_TEST"):
+        return False
+    if not os.path.isdir(os.path.join(DIR, ".git")):
+        return False
+    if not mreza_dostupna():
+        upisi_dnevnik("GitHub: nema mreže, radi postojeća verzija")
+        return False
+    git = _git_komanda()
     try:
         stari = git("rev-parse", "HEAD").stdout.strip()
-        r = git("pull", "--ff-only", "-q")
+        r = git("fetch", "-q", "origin", "main")
+        if r.returncode != 0:
+            upisi_dnevnik("GitHub: nova verzija nije preuzeta: %s" % (r.stderr or r.stdout).strip()[:500])
+            return False
+        vrh = git("rev-parse", "origin/main").stdout.strip()
+        if not stari or not vrh or vrh == stari:
+            return False
+        try:
+            with open(os.path.join(REZERVE_DIR, LOSA_VERZIJA), encoding="utf-8") as f:
+                losa = f.read().strip()
+        except OSError:
+            losa = ""
+        if vrh == losa:
+            return False                      # već probana i nije radila; čeka se novija
+        r = git("merge", "--ff-only", "-q", "origin/main")
         if r.returncode != 0:
             upisi_dnevnik("GitHub: nova verzija nije preuzeta: %s" % (r.stderr or r.stdout).strip()[:500])
             return False
         novi = git("rev-parse", "HEAD").stdout.strip()
-        if not stari or novi == stari:
-            return False
         stari_kod = git("show", "%s:asistent_katastar.py" % stari, bajtovi=True)
         if stari_kod.returncode == 0:
             os.makedirs(REZERVE_DIR, exist_ok=True)
             with open(os.path.join(REZERVE_DIR, "asistent_katastar_%s.py" % stari[:8]), "wb") as f:
                 f.write(stari_kod.stdout)
+        program = os.path.join(DIR, "asistent_katastar.py")
+        uspelo, razlog = probni_start(program)
+        if not uspelo:
+            vrati_staru_verziju(stari, razlog, git)
+            return False
+        os.makedirs(REZERVE_DIR, exist_ok=True)
+        with open(os.path.join(REZERVE_DIR, NOVA_VERZIJA), "w", encoding="utf-8") as f:
+            f.write(stari + "\n")
         opis = git("log", "--format=%s", "%s..%s" % (stari, novi)).stdout.strip().replace("\n", "; ")
-        upisi_dnevnik("GitHub: preuzeta nova verzija %s (%s)" % (novi[:8], opis[:300]))
-        subprocess.Popen([sys.executable, os.path.join(DIR, "asistent_katastar.py"), "--bez-azuriranja"]
-                         + sys.argv[1:], cwd=DIR)
+        upisi_dnevnik("GitHub: preuzeta nova verzija %s (%s), probni start prošao" % (novi[:8], opis[:300]))
+        subprocess.Popen([sys.executable, program, "--bez-azuriranja"] + sys.argv[1:], cwd=DIR)
         return True
     except Exception:
         upisi_dnevnik("GitHub: azuriranje: " + traceback.format_exc())
         return False
 
 
+def nova_verzija_ne_radi():
+    """v34: prvo pravo pokretanje nove verzije je puklo -> nazad na prethodnu i ponovo pokreni. True ako je vraćeno."""
+    put = os.path.join(REZERVE_DIR, NOVA_VERZIJA)
+    if os.environ.get("KATASTAR_TEST") or "--probni-start" in sys.argv or not os.path.exists(put):
+        return False
+    try:
+        with open(put, encoding="utf-8") as f:
+            stari = f.read().strip()
+        if stari and vrati_staru_verziju(stari, "greška pri prvom pokretanju"):
+            subprocess.Popen([sys.executable, os.path.join(DIR, "asistent_katastar.py"), "--bez-azuriranja"], cwd=DIR)
+            return True
+    except Exception:
+        upisi_dnevnik("GitHub: vraćanje stare verzije: " + traceback.format_exc())
+    return False
+
+
+def nova_verzija_radi():
+    """v34: program se pokrenuo bez greške - nova verzija je prihvaćena."""
+    try:
+        os.remove(os.path.join(REZERVE_DIR, NOVA_VERZIJA))
+    except OSError:
+        pass
+
+
 def main():
-    if azuriraj_sa_githuba():
+    proba = "--probni-start" in sys.argv          # v34: samo učitaj, otvori nevidljiv prozor i zatvori (vidi probni_start)
+    if not proba and azuriraj_sa_githuba():
         return
     try:
         import ctypes
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
     except Exception:
         pass
-    registruj_aplikaciju()
+    if not proba:
+        registruj_aplikaciju()
     ukljuci_ostar_prikaz()           # pre prozora: bez ovoga je na uvecanom ekranu sve mutno
+    greske = []
     try:
         root = tk.Tk()
+        if proba:
+            root.withdraw()
+            try:
+                root.attributes("-alpha", 0.0)
+            except tk.TclError:
+                pass
+            root.report_callback_exception = lambda *a: greske.append("".join(traceback.format_exception(*a)))
         ikona = putanja_ikone()
         if ikona:
             try:
@@ -7343,11 +8088,24 @@ def main():
             except tk.TclError:
                 pass
         App(root)
+        if proba:
+            root.withdraw()
+            root.after(1500, root.destroy)
+            root.mainloop()
+            if greske:
+                sys.stderr.write(greske[0])
+                sys.exit(3)
+            return
         if ikona:
             postavi_ostru_ikonu(root, ikona)
+        root.after(20000, nova_verzija_radi)
         root.mainloop()
     except Exception:
+        if proba:
+            raise
         upisi_dnevnik("GRESKA PRI POKRETANJU:\n" + traceback.format_exc())
+        if nova_verzija_ne_radi():
+            return
         raise
 
 
