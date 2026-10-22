@@ -2861,17 +2861,17 @@ def nadji_drive_folder():
     zadat = os.environ.get("KATASTAR_DRIVE")
     if zadat is not None or TEST_REZIM:
         return zadat if zadat and os.path.isdir(zadat) else None
-    kandidati = []
     if os.name == "nt":
-        for slovo in "GHIJKLMNOPQRSTUVWXYZDEF":
+        for slovo in "GHIJKLMNOPQRSTUVWXYZDEF":         # G: je podrazumevano slovo Drive-a za računare
             if not os.path.isdir(slovo + ":\\"):
                 continue
             for koren in ("My Drive", "Moj disk", "Мој диск", "Moja disk"):
-                kandidati.append(os.path.join(slovo + ":\\", koren, DRIVE_FOLDER))
+                k = os.path.join(slovo + ":\\", koren, DRIVE_FOLDER)
+                if os.path.isdir(k):
+                    return k                            # prvi pronađen; ostala slova se ne gledaju
     kucni = os.path.expanduser("~")
-    kandidati += [os.path.join(kucni, "Google Drive", "My Drive", DRIVE_FOLDER),
-                  os.path.join(kucni, "My Drive", DRIVE_FOLDER)]
-    return next((k for k in kandidati if os.path.isdir(k)), None)
+    return next((k for k in (os.path.join(kucni, "Google Drive", "My Drive", DRIVE_FOLDER),
+                             os.path.join(kucni, "My Drive", DRIVE_FOLDER)) if os.path.isdir(k)), None)
 
 
 def ucitaj_zadatak(put):
@@ -4421,7 +4421,9 @@ class App:
         if izbor:
             return izbor if os.path.isdir(izbor) else None
         if not hasattr(self, "_drive_nadjen"):
-            self._drive_nadjen = nadji_drive_folder()
+            # traži se u pozadini (nepovezan mrežni disk ume da zadrži proveru slova diska nekoliko sekundi)
+            self._drive_nadjen = None
+            threading.Thread(target=lambda: setattr(self, "_drive_nadjen", nadji_drive_folder()), daemon=True).start()
         return self._drive_nadjen
 
     def _rezerva_na_drive(self):
