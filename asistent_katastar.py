@@ -43,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v38"
+VERZIJA = "v39"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -2849,7 +2849,8 @@ def poslovi_pdf(mesta):
 # --- v32 (Dejan: "kada ti ubacim ugovor i kazem izvuci sve parcele"): zadatak koji Claude ostavi u folderu zadaci ---
 # {"naziv", "klijent", "grupa" (podrazumevano klijent), "pdf": true, "folder" (gde PDF; inače stalni ili PDF),
 #  "postojece": "preskoci" | "premesti" | "proveri" (v35, parcela koja je već u praćenju; podrazumevano preskoci),
-#  "parcele": [{"opstina" ili "opstina_id", "ko" ili "ko_id", "broj", "stan", "ulaz", "napomena"}]}
+#  "parcele": [{"opstina" ili "opstina_id", "ko" ili "ko_id", "broj", "stan", "ulaz", "napomena",
+#               "klijent", "grupa" (v39: za tu parcelu umesto zajedničkih)}]}
 # v35: zadatak može da stigne i preko Drive-a (folder ASISTENT KATASTAR/zadaci), izveštaj se vraća u izvestaji/ tamo
 POSTOJECE = ("preskoci", "premesti", "proveri")
 DRIVE_FOLDER = "ASISTENT KATASTAR"
@@ -2886,7 +2887,7 @@ def ucitaj_zadatak(put):
         broj = "".join(str(x.get("broj") or "").split())
         if not re.fullmatch(r"[0-9]{1,6}(/[0-9]{1,3})?", broj):
             raise ValueError("parcela %d: neispravan broj parcele (%s)" % (i, broj or "prazno"))
-        p = {k: norm(str(x.get(k) or "")) for k in ("opstina", "ko", "stan", "ulaz", "napomena")}
+        p = {k: norm(str(x.get(k) or "")) for k in ("opstina", "ko", "stan", "ulaz", "napomena", "klijent", "grupa")}
         for k in ("opstina_id", "ko_id"):
             try:
                 p[k] = int(x[k]) if x.get(k) not in (None, "") else None
@@ -2904,6 +2905,41 @@ def ucitaj_zadatak(put):
             "klijent": klijent, "grupa": norm(str(d.get("grupa") or "")) or klijent,
             "sacuvaj_pdf": d.get("pdf", True) is not False, "folder": str(d.get("folder") or "").strip(),
             "postojece": postojece, "parcele": parcele}
+
+
+KOLONE_UVOZA = {"opstina": "opstina", "katastarska opstina": "ko", "ko": "ko", "parcela": "broj", "broj": "broj",
+                "broj parcele": "broj", "katastarska parcela": "broj", "klijent": "klijent", "grupa": "grupa",
+                "napomena": "napomena", "stan": "stan", "ulaz": "ulaz"}
+
+
+def procitaj_spisak(tekst):
+    """v39: spisak parcela nalepljen iz Excela (kolone razdvojene tabom) ili CSV (; ili ,) -> (parcele, loše).
+    Prvi red sa nazivima kolona (Opština, KO, Parcela, Klijent, Grupa, Napomena, Stan, Ulaz - bilo kojim redom i
+    pismom); bez njega kolone su: KO, broj parcele, klijent, napomena. Više brojeva u ćeliji ("10383, 10384/1",
+    "100-103") daje više parcela. loše = [(broj reda, red, razlog)]."""
+    redovi = [(i, r) for i, r in enumerate((tekst or "").replace("\r", "").split("\n"), 1) if r.strip()]
+    if not redovi:
+        return [], []
+    razd = "\t" if any("\t" in r for _, r in redovi) else (";" if any(";" in r for _, r in redovi) else ",")
+    tabela = [(i, next(csv.reader([r], delimiter=razd))) for i, r in redovi]     # i = red kao u Excelu
+    glava = [KOLONE_UVOZA.get(" ".join(lat(c).split())) for c in tabela[0][1]]
+    if "broj" in glava and ("ko" in glava or "opstina" in glava):
+        kolone, tabela = glava, tabela[1:]
+    else:
+        kolone = ["ko", "broj", "klijent", "napomena"]
+    parcele, lose = [], []
+    for i, red in tabela:
+        d = {k: norm(red[j]) for j, k in enumerate(kolone) if k and j < len(red) and norm(red[j])}
+        if not d.get("ko"):
+            lose.append((i, razd.join(red), "nema katastarske opštine"))
+            continue
+        brojevi, losi = raspakuj_brojeve(d.get("broj", ""))
+        if losi or not brojevi:
+            lose.append((i, razd.join(red), "neispravan broj parcele: %s" % (", ".join(losi) or "prazno")))
+            continue
+        for b in brojevi:
+            parcele.append(dict(d, broj=b))
+    return parcele, lose
 
 
 def izvestaj_zadatka_tekst(z):
@@ -4014,6 +4050,7 @@ class App:
         self.root.after(2500, self._proveri_precicu)
         self.root.after(4000, lambda: self.baza.pretrazi("\x00"))   # v36: tekst za pretragu se pripremi unapred
         self.root.after(6000, self._ponudi_rok)                       # v38: istekao rok provere grupe
+        self.root.after(8000, self._rezerva_na_drive)                 # v39: druga kopija rezerve baze
         self._pokreni_zadatke()               # v32: zadaci od Claude-a (folder zadaci)
 
     # --- meni i trake ----------------------------------------------------
@@ -4028,6 +4065,7 @@ class App:
         m.add_cascade(label="Provera", menu=mp)
         mr = tk.Menu(m, tearoff=0)
         mr.add_command(label="Dodaj parcele u praćenje...", command=self.dodaj_dijalog)
+        mr.add_command(label="Uvezi spisak parcela (Excel, CSV)...", command=self.uvezi_spisak)   # v39
         mr.add_separator()
         mr.add_command(label="Detalji", command=self.detalji)
         mr.add_command(label="Kopiraj broj parcele (KO i broj)", command=lambda: self._kop_pracenja.kopiraj_brojeve())
@@ -4386,6 +4424,31 @@ class App:
             self._drive_nadjen = nadji_drive_folder()
         return self._drive_nadjen
 
+    def _rezerva_na_drive(self):
+        """v39: današnja rezerva baze (rezerve/katastar_GGGGMMDD.db) i u Drive folder "rezerve baze" - za slučaj
+        kvara diska; tamo se čuva poslednjih 10. U pozadini (kopiranje na G: može da potraje)."""
+        d = self.drive_folder()
+        if not d:
+            return
+        cilj = os.path.join(d, "rezerve baze")
+        izvor = os.path.join(REZERVE_DIR, "katastar_%s.db" % dt.date.today().strftime("%Y%m%d"))
+
+        def nit():
+            try:
+                if not os.path.exists(izvor):
+                    return
+                os.makedirs(cilj, exist_ok=True)
+                kopija = os.path.join(cilj, os.path.basename(izvor))
+                if not os.path.exists(kopija):
+                    shutil.copy2(izvor, kopija + ".tmp")
+                    os.replace(kopija + ".tmp", kopija)
+                stare = sorted(f for f in os.listdir(cilj) if re.fullmatch(r"katastar_\d{8}\.db", f))
+                for f in stare[:-10]:
+                    os.remove(os.path.join(cilj, f))
+            except OSError as e:
+                upisi_dnevnik("Rezerva na Drive-u: %r" % (e,))
+        threading.Thread(target=nit, daemon=True).start()
+
     def drive_zadaci(self):
         d = self.drive_folder()
         if not d:
@@ -4525,7 +4588,9 @@ class App:
                 continue
             oid, opstina, ko_id, ko = m
             r["ko"] = ko
-            novo = self.baza.dodaj(oid, opstina, ko_id, ko, x["broj"], klijent=z["klijent"], grupa=z["grupa"],
+            klijent = x.get("klijent") or z["klijent"]          # v39: uvoz spiska - klijent i grupa po parceli
+            grupa = x.get("grupa") or z["grupa"] or x.get("klijent") or ""
+            novo = self.baza.dodaj(oid, opstina, ko_id, ko, x["broj"], klijent=klijent, grupa=grupa,
                                    napomena=x["napomena"])
             p = self.baza.parcela_po_mestu(ko_id, x["broj"])
             if p is None:
@@ -4548,8 +4613,8 @@ class App:
                 # v35 (Dejan: "neke su već u aplikaciji, neću duplikate"): parcela koja je već u praćenju se ne
                 # dodaje ponovo i podrazumevano se ne proverava; "premesti" je prebacuje u grupu zadatka
                 r["stanje"] = "već je bila u praćenju" + ((", grupa %s" % p["grupa"]) if p["grupa"] else "")
-                if z["postojece"] == "premesti" and z["grupa"] and lat(p["grupa"]) != lat(z["grupa"]):
-                    self.baza.promeni_grupu([p["id"]], z["grupa"])
+                if z["postojece"] == "premesti" and grupa and lat(p["grupa"]) != lat(grupa):
+                    self.baza.promeni_grupu([p["id"]], grupa)
                     r["stanje"] += " - premeštena u grupu %s" % (self.baza.parcela_po_mestu(ko_id, x["broj"])["grupa"])
                 if z["postojece"] != "proveri":
                     r["preskocena"] = True
@@ -5892,6 +5957,80 @@ class App:
         e_k.focus_set()
         self.root.wait_window(d)
         return rez.get("v")
+
+    def uvezi_spisak(self):
+        """v39: spisak parcela iz Excela (Kopiraj -> Nalepi) ili CSV fajla ide u praćenje kao zadatak: KO se nalazi
+        isto kao za ugovor, parcele koje su već u praćenju se preskaču, nove se odmah skidaju sa sajta."""
+        d = tk.Toplevel(self.root)
+        d.title("Uvezi spisak parcela")
+        d.transient(self.root)
+        f = ttk.Frame(d, padding=px(12))
+        f.pack(fill="both", expand=True)
+        ttk.Label(f, text="Nalepi kolone iz Excela (prvi red: Opština, KO, Parcela, Klijent, Grupa, Napomena)\n"
+                          "ili bez naslova: KO, broj parcele, klijent, napomena.").pack(anchor="w")
+        txt = tk.Text(f, width=80, height=14, font=FONT, undo=True)
+        txt.pack(fill="both", expand=True, pady=px(6))
+        red = ttk.Frame(f)
+        red.pack(fill="x")
+        ttk.Label(red, text="Grupa (za redove bez nje):").pack(side="left")
+        grupa = tk.StringVar()
+        ttk.Combobox(red, textvariable=grupa, values=self.baza.grupe(), width=28).pack(side="left", padx=px(6))
+        stanje = ttk.Label(f, text="", foreground=T_SIVO)
+        stanje.pack(anchor="w", pady=(px(6), 0))
+
+        def otvori():
+            put = filedialog.askopenfilename(parent=d, title="CSV spisak parcela",
+                                             filetypes=[("CSV", "*.csv"), ("Tekst", "*.txt"), ("Svi", "*.*")])
+            if put:
+                for kod in ("utf-8-sig", "cp1250"):
+                    try:
+                        with open(put, encoding=kod) as fa:
+                            sadrzaj = fa.read()
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                txt.delete("1.0", "end")
+                txt.insert("1.0", sadrzaj)
+                pregled()
+
+        def pregled(_=None):
+            parcele, lose = procitaj_spisak(txt.get("1.0", "end"))
+            stanje.configure(text="Parcela: %d%s" % (len(parcele), ("; neispravnih redova: %d (red %s)" % (
+                len(lose), ", ".join(str(x[0]) for x in lose[:8]))) if lose else ""),
+                foreground=BOJA_NEUSPEH if lose else T_SIVO)
+            return parcele, lose
+
+        def uvezi():
+            parcele, lose = pregled()
+            if not parcele:
+                messagebox.showinfo("Uvoz", "Nema parcela za uvoz.", parent=d)
+                return
+            if lose and not messagebox.askyesno("Uvoz", "%d red(ova) nije ispravno i neće biti uvezeno:\n%s\n\n"
+                                                "Uvesti ostale (%s)?" % (len(lose), "\n".join(
+                                                    "red %d: %s" % (x[0], x[2]) for x in lose[:8]),
+                                                    br_parcela(len(parcele))), parent=d):
+                return
+            ime = "uvoz %s.json" % dt.datetime.now().strftime("%Y-%m-%d %H.%M.%S")
+            zad = {"naziv": "Uvoz spiska (%s)" % br_parcela(len(parcele)), "grupa": norm(grupa.get()),
+                   "pdf": False, "parcele": parcele}
+            os.makedirs(ZADACI_DIR, exist_ok=True)
+            with open(os.path.join(ZADACI_DIR, ime + ".tmp"), "w", encoding="utf-8") as fz:
+                json.dump(zad, fz, ensure_ascii=False, indent=1)
+            os.replace(os.path.join(ZADACI_DIR, ime + ".tmp"), os.path.join(ZADACI_DIR, ime))
+            d.destroy()
+            self.log("Uvoz: %s ide u praćenje (već praćene se preskaču, nove se skidaju sa sajta)." %
+                     br_parcela(len(parcele)), "info")
+        dugmad = ttk.Frame(f)
+        dugmad.pack(fill="x", pady=(px(10), 0))
+        ttk.Button(dugmad, text="Otvori CSV...", command=otvori).pack(side="left")
+        ttk.Button(dugmad, text="Otkaži", command=d.destroy).pack(side="right")
+        ttk.Button(dugmad, text="Uvezi", command=uvezi).pack(side="right", padx=px(6))
+        txt.bind("<KeyRelease>", pregled)
+        txt.bind("<<Paste>>", lambda e: d.after(50, pregled))
+        d.bind("<Escape>", lambda e: d.destroy())
+        txt.focus_set()
+        d._uvezi, d._txt, d._grupa = uvezi, txt, grupa        # za test
+        self._uvoz_prozor = d
 
     def dodaj_dijalog(self):
         d = tk.Toplevel(self.root)
