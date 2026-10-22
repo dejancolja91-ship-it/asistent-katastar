@@ -7,7 +7,9 @@ PY="${PYTHON:-python3}"
 "$PY" napravi.py || exit 1
 for d in 98:1600x1000 97:2880x1620 96:1920x1080 95:1366x768; do   # :96 i :95 za test_raspored
   n="${d%%:*}"
-  if [ ! -e "/tmp/.X11-unix/X$n" ]; then
+  # radi li stvarno (posle restarta ostaje stari soket bez procesa)
+  if ! { [ -f "/tmp/.X$n-lock" ] && kill -0 "$(tr -d ' ' < "/tmp/.X$n-lock")" 2>/dev/null; }; then
+    rm -f "/tmp/.X$n-lock" "/tmp/.X11-unix/X$n"
     Xvfb ":$n" -screen 0 "${d#*:}x24" >/dev/null 2>&1 &
     sleep 1
   fi
