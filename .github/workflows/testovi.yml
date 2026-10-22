@@ -10,10 +10,10 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Python, tkinter, Xvfb
+      - name: Python, tkinter, Xvfb, ImageMagick (snimci ekrana u testovima), poppler (pdftotext)
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q python3-tk python3-requests xvfb fonts-dejavu-core
+          sudo apt-get install -y -q python3-tk python3-requests xvfb fonts-dejavu-core imagemagick poppler-utils
       - name: asistent_katastar.py je sastavljen iz izvor.py
         run: |
           cd izvor && python3 napravi.py && cd ..
