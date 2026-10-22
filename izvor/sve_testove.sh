@@ -19,7 +19,7 @@ proveri() {   # ime_izlaza opis
   echo "$2: ${r:-NIJE ZAVRSEN}"
   [ "$r" = "UKUPNO GRESAKA: 0" ] || { LOSE=1; tail -25 "$1"; }
 }
-for t in test_prati_celu test_sveze test_meni_liste test_skrol test_pracenje_stavke test_izbor test_nepokretnosti test_zamke test_logika test_grupe test_panel test_pdf test_prozor test_adresa test_zadaci test_azuriranje; do
+for t in test_prati_celu test_sveze test_meni_liste test_skrol test_pracenje_stavke test_izbor test_nepokretnosti test_zamke test_logika test_grupe test_panel test_pdf test_prozor test_adresa test_zadaci test_azuriranje test_baza; do
   DISPLAY=:98 timeout 900 "$PY" $t.py > out_$t.txt 2>&1
   proveri out_$t.txt "$t"
 done
