@@ -3710,20 +3710,14 @@ def citaj_datum(t):
         return None
 
 
-def citaj_datum(t):
-    """v38: '07.01.2026', '7.1.2026.', '07.01.2026 10:00' -> datum, ili None."""
-    m = re.match(r"^\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})", t or "")
-    if not m:
-        return None
-    try:
-        return dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
-    except ValueError:
-        return None
+def datum_iz_vremena(t):
+    """v38: '07.01.2026 10:15' (provereno, istorija) -> datum, ili None."""
+    return citaj_datum((t or "").split(" ")[0])
 
 
 def istekao_rok(p, dana, danas=None):
     """v38: parcela nije proverena u poslednjih `dana` dana (ili nikad)."""
-    d = citaj_datum(p.get("provereno"))
+    d = datum_iz_vremena(p.get("provereno"))
     return d is None or ((danas or dt.date.today()) - d).days >= dana
 
 
@@ -3735,8 +3729,8 @@ def izvestaj_promena(parcele, istorija, od, naslov):
     danas = dt.date.today()
     delovi, csv_redovi, sa_promenom = [], [], 0
     for p in parcele:
-        zapisi = [r for r in istorija.get(p["id"], []) if (citaj_datum(r["vreme"]) or danas) >= od]
-        zapisi.sort(key=lambda r: (citaj_datum(r["vreme"]) or danas, r["vreme"][11:16], r["id"]))
+        zapisi = [r for r in istorija.get(p["id"], []) if (datum_iz_vremena(r["vreme"]) or danas) >= od]
+        zapisi.sort(key=lambda r: (datum_iz_vremena(r["vreme"]) or danas, r["vreme"][11:16], r["id"]))
         ime = "%s %s" % (p["ko"], p["broj"])
         dodatak = ", ".join(x for x in (p.get("klijent"), p.get("napomena")) if x)
         delovi.append('<h2>%s%s</h2>' % (e(ime), (' <span class="siv">(%s)</span>' % e(dodatak)) if dodatak else ""))

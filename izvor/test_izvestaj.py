@@ -37,9 +37,11 @@ def ok(uslov, opis):
 
 
 # --- datumi i rok (bez prozora) ---
-ok(ak.citaj_datum("07.01.2026") == dt.date(2026, 1, 7) and ak.citaj_datum("7.1.2026.") == dt.date(2026, 1, 7) and
-   ak.citaj_datum("07.01.2026 10:15") == dt.date(2026, 1, 7) and ak.citaj_datum("31.02.2026") is None and
-   ak.citaj_datum("") is None, "citaj_datum")
+ok(ak.datum_iz_vremena("07.01.2026 10:15") == dt.date(2026, 1, 7) and ak.datum_iz_vremena("7.1.2026.") ==
+   dt.date(2026, 1, 7) and ak.datum_iz_vremena("31.02.2026 10:00") is None and ak.datum_iz_vremena(None) is None,
+   "datum_iz_vremena")
+ok(ak.citaj_datum("2027-01-07") == dt.date(2027, 1, 7) and ak.citaj_datum("07.01.27.") == dt.date(2027, 1, 7),
+   "citaj_datum (Odloži proveru) nepromenjen")
 danas = dt.date(2026, 10, 22)
 ok(ak.istekao_rok({"provereno": "12.10.2026 10:00"}, 7, danas) and not ak.istekao_rok(
     {"provereno": "20.10.2026 10:00"}, 7, danas) and ak.istekao_rok({"provereno": None}, 7, danas), "istekao_rok")
