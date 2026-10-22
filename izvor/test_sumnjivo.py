@@ -114,4 +114,5 @@ srv.shutdown()
 print("UKUPNO GRESAKA: %d" % len(GRESKE))
 for x in GRESKE:
     print("  -", x)
+sys.stdout.flush()   # bez ovoga se poslednji redovi gube kad izlaz ide u fajl (CI)
 os._exit(1 if GRESKE else 0)

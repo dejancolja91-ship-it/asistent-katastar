@@ -259,4 +259,5 @@ subprocess.run(["import", "-window", "root", "zadatak_v32%s.png" % ("" if UVECAN
 root.destroy()
 srv.shutdown()
 print("\nUKUPNO GRESAKA: %d" % len(GRESKE))
+sys.stdout.flush()   # bez ovoga se poslednji redovi gube kad izlaz ide u fajl (CI)
 os._exit(1 if GRESKE else 0)
