@@ -152,7 +152,8 @@ app.izmeni()
 cekaj(lambda: dijalog() is None, 10)
 p = b.parcele([p["id"]])[0]
 ok(p["ko"] == "ЗУЦЕ" and str(p["ko_id"]) == "703753" and p["broj"] == "10383", "KO promenjena: %s %s" % (p["ko"], p["ko_id"]))
-cekaj(lambda: app.posao is None, 120)
+# provera kreće 200 ms posle izmene: čeka se da stvarno završi (naziv KO posle nje je onaj koji vrati sajt)
+ok(cekaj(lambda: b.parcele([p["id"]])[0]["provereno"] and app.posao is None, 120), "nova KO odmah proverena")
 
 # --- 3. na parcelu koja je već u praćenju: ne duplira ---
 app.tree.selection_set(str(p["id"]))
@@ -169,7 +170,9 @@ u_dijalogu(na_4415)
 app.izmeni()
 cekaj(lambda: dijalog() is None, 10)
 ok(any(x[0] == "showwarning" and "već u praćenju" in x[2] for x in PORUKE), "upozorenje: već je u praćenju")
-ok(b.parcele([p["id"]])[0]["ko"] == "ЗУЦЕ" and len(b.parcele()) == 2, "ništa promenjeno, bez duplikata")
+posle = b.parcele([p["id"]])[0]
+ok(str(posle["ko_id"]) == "703753" and posle["broj"] == "10383" and len(b.parcele()) == 2,
+   "ništa promenjeno, bez duplikata (%s %s)" % (posle["ko_id"], posle["broj"]))
 
 # --- 4. neispravan broj: prozor ostaje, ništa se ne menja ---
 PORUKE.clear()
