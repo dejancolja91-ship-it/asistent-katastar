@@ -43,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v37"
+VERZIJA = "v38"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -1808,6 +1808,18 @@ class Baza:
         rez.sort(key=lambda x: srpski_kljuc(x[0]))
         return rez
 
+    def rokovi(self):
+        """v38: {grupa: rok provere u danima}."""
+        with self._con() as c:
+            return {r["naziv"]: r["dana"] for r in c.execute("SELECT naziv, dana FROM rok_grupe WHERE dana > 0")}
+
+    def postavi_rok(self, naziv, dana):
+        with self._con() as c:
+            if dana:
+                c.execute("INSERT OR REPLACE INTO rok_grupe VALUES (?,?)", (naziv, int(dana)))
+            else:
+                c.execute("DELETE FROM rok_grupe WHERE naziv=?", (naziv,))
+
     def preimenuj_grupu(self, stara, nova):
         nova = norm(nova)
         postojeca = self._postojeca(nova)
@@ -1817,9 +1829,13 @@ class Baza:
             c.execute("UPDATE parcele SET grupa=? WHERE grupa=?", (nova, stara))
             c.execute("DELETE FROM grupe WHERE naziv=?", (stara,))
             c.execute("INSERT OR IGNORE INTO grupe (naziv) VALUES (?)", (nova,))
+            # v38: rok ide uz grupu (u postojeću se prenosi samo ako ona nema svoj)
+            c.execute("UPDATE OR IGNORE rok_grupe SET naziv=? WHERE naziv=?", (nova, stara))
+            c.execute("DELETE FROM rok_grupe WHERE naziv=?", (stara,))
 
     def obrisi_grupu(self, naziv):
         with self._con() as c:
+            c.execute("DELETE FROM rok_grupe WHERE naziv=?", (naziv,))      # v38
             c.execute("UPDATE parcele SET grupa='' WHERE grupa=?", (naziv,))
             c.execute("DELETE FROM grupe WHERE naziv=?", (naziv,))
 
@@ -3658,6 +3674,72 @@ def citaj_datum(t):
         return None
 
 
+def citaj_datum(t):
+    """v38: '07.01.2026', '7.1.2026.', '07.01.2026 10:00' -> datum, ili None."""
+    m = re.match(r"^\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})", t or "")
+    if not m:
+        return None
+    try:
+        return dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+    except ValueError:
+        return None
+
+
+def istekao_rok(p, dana, danas=None):
+    """v38: parcela nije proverena u poslednjih `dana` dana (ili nikad)."""
+    d = citaj_datum(p.get("provereno"))
+    return d is None or ((danas or dt.date.today()) - d).days >= dana
+
+
+def izvestaj_promena(parcele, istorija, od, naslov):
+    """v38 (izveštaj za klijenta): sve promene na parcelama od datuma `od` do danas, staro -> novo, po parceli;
+    parcela bez promene u periodu je navedena sa datumom poslednje provere. istorija = {id parcele: [redovi]}.
+    Vraća (html za PDF, redovi za CSV, broj parcela sa promenom)."""
+    e = htmlmod.escape
+    danas = dt.date.today()
+    delovi, csv_redovi, sa_promenom = [], [], 0
+    for p in parcele:
+        zapisi = [r for r in istorija.get(p["id"], []) if (citaj_datum(r["vreme"]) or danas) >= od]
+        zapisi.sort(key=lambda r: (citaj_datum(r["vreme"]) or danas, r["vreme"][11:16], r["id"]))
+        ime = "%s %s" % (p["ko"], p["broj"])
+        dodatak = ", ".join(x for x in (p.get("klijent"), p.get("napomena")) if x)
+        delovi.append('<h2>%s%s</h2>' % (e(ime), (' <span class="siv">(%s)</span>' % e(dodatak)) if dodatak else ""))
+        if not zapisi:
+            delovi.append('<p class="bez">Bez promena u periodu. Poslednja provera: %s</p>' %
+                          e(p.get("provereno") or "nije provereno"))
+            csv_redovi.append([p.get("grupa") or "", p["ko"], p["broj"], p.get("klijent") or "", "", "",
+                               "bez promena", "", p.get("provereno") or ""])
+            continue
+        sa_promenom += 1
+        redovi = []
+        for r in zapisi:
+            for pr in promene_staro_novo(r["tekst"].split("\n")):
+                staro, novo = tekst_delova(pr["staro"]), tekst_delova(pr["novo"])
+                redovi.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+                    e(r["vreme"]), e(pr["gde"]), e(staro), e(novo)))
+                csv_redovi.append([p.get("grupa") or "", p["ko"], p["broj"], p.get("klijent") or "", r["vreme"],
+                                   pr["gde"], staro, novo, p.get("provereno") or ""])
+        delovi.append('<table><tr><th>Datum</th><th>Šta</th><th>Staro stanje</th><th>Novo stanje</th></tr>%s'
+                      '</table>' % "".join(redovi))
+    html = ('<!doctype html><html><head><meta charset="utf-8"><title>%s</title><style>'
+            'body{font-family:"Segoe UI",Arial,sans-serif;font-size:10pt;color:#1f2937;margin:18mm 14mm}'
+            'h1{font-size:15pt;color:#173a7a;margin:0 0 4px}h2{font-size:11pt;margin:16px 0 4px;color:#173a7a}'
+            '.siv{color:#6b7280;font-weight:normal}.bez{color:#17663a;margin:2px 0}'
+            'table{border-collapse:collapse;width:100%%}th,td{border:1px solid #d8dee8;padding:3px 5px;'
+            'vertical-align:top;text-align:left}th{background:#e6ecf6}td:nth-child(3){color:#8a1c1c}'
+            'td:nth-child(4){color:#17663a}td:first-child{white-space:nowrap;width:1%%}@page{size:A4}'
+            '</style></head><body>'
+            '<h1>Izveštaj o promenama: %s</h1><p>Period: %s - %s &middot; parcela: %d, sa promenom: %d</p>%s'
+            '<p class="siv">Asistent KATASTAR %s, podaci sa katastar.rgz.gov.rs (eKatastar)</p></body></html>') % (
+        e(naslov), e(naslov), od.strftime("%d.%m.%Y"), danas.strftime("%d.%m.%Y"), len(parcele), sa_promenom,
+        "".join(delovi), VERZIJA)
+    return html, csv_redovi, sa_promenom
+
+
+IZVESTAJ_CSV_ZAGLAVLJE = ["Grupa", "KO", "Parcela", "Klijent", "Datum promene", "Šta", "Staro stanje", "Novo stanje",
+                          "Poslednja provera"]
+
+
 def srp_datum(iso):
     """'2027-01-07' -> '07.01.2027'"""
     try:
@@ -3931,6 +4013,7 @@ class App:
         self.root.after(250, self._ticker)
         self.root.after(2500, self._proveri_precicu)
         self.root.after(4000, lambda: self.baza.pretrazi("\x00"))   # v36: tekst za pretragu se pripremi unapred
+        self.root.after(6000, self._ponudi_rok)                       # v38: istekao rok provere grupe
         self._pokreni_zadatke()               # v32: zadaci od Claude-a (folder zadaci)
 
     # --- meni i trake ----------------------------------------------------
@@ -3972,6 +4055,10 @@ class App:
         mg.add_command(label="Premesti izabrane u grupu...", command=self.promeni_grupu)
         mg.add_command(label="Preimenuj grupu...", command=self.preimenuj_grupu)
         mg.add_command(label="Obriši grupu", command=self.obrisi_grupu)
+        mg.add_separator()
+        # v38: izveštaj za klijenta samo ovde (desni klik na grupu ostaje kratak)
+        mg.add_command(label="Izveštaj o promenama (grupa ili izabrane)...", command=self.izvestaj_promena)
+        mg.add_command(label="Rok provere grupe...", command=self.rok_grupe)
         mg.add_separator()
         mg.add_command(label="Grupiši parcele istog klijenta (sada)", command=self.grupisi_sada)
         mg.add_checkbutton(label="Automatski grupiši parcele istog klijenta", variable=self.auto_grupe_var)
@@ -5393,6 +5480,7 @@ class App:
                              tags=(self._tag(BG_PROMENA if novo_sesija else None, fg,
                                              novo_sesija or bool(p["promene"])),))
 
+        rokovi = self.baza.rokovi()
         for g in sorted((x for x in po_grupi if x != BEZ_GRUPE), key=srpski_kljuc):
             lst = po_grupi[g]
             giid = "g:" + g
@@ -5403,7 +5491,8 @@ class App:
             n_odl, n_arh = sum(odlozen(p) for p in lst), sum(arhiviran(p) for p in lst)
             opis = "  ·  ".join(
                 (["provereno u ovoj sesiji: %d/%d" % (danas_ok, len(aktivni))] if aktivni or not lst else []) +
-                (["odloženo: %d" % n_odl] if n_odl else []) + (["u arhivi: %d" % n_arh] if n_arh else []))
+                (["odloženo: %d" % n_odl] if n_odl else []) + (["u arhivi: %d" % n_arh] if n_arh else []) +
+                (["rok: %d d" % rokovi[g]] if g in rokovi else []))
             promena = ("PROMENA: %s" % br_parcela(u_sesiji)) if u_sesiji else \
                 ("nepregledano: %s" % br_parcela(nepregl)) if nepregl else ""
             self.tree.insert("", "end", iid=giid, text="%s  (%d)" % (g, len(lst)),
@@ -5924,6 +6013,118 @@ class App:
             messagebox.showinfo(naslov, "Nema grupa.")
             return None
         return simpledialog.askstring(naslov, "Naziv grupe:\n" + ", ".join(g), parent=self.root)
+
+    # --- v38: rok provere po grupi i izveštaj o promenama za klijenta ---
+    def rok_grupe(self):
+        g = self._izaberi_grupu("Rok provere grupe")
+        if not g:
+            return
+        g = self.baza._postojeca(g) or g
+        sad = self.baza.rokovi().get(g, 0)
+        n = simpledialog.askinteger("Rok provere grupe", "Grupa %s: proveravaj na svakih koliko dana?\n"
+                                    "(0 = bez roka; kad rok istekne, program pri pokretanju ponudi proveru)" % g,
+                                    parent=self.root, initialvalue=sad, minvalue=0, maxvalue=3650)
+        if n is None:
+            return
+        self.baza.postavi_rok(g, n)
+        self.osvezi_listu()
+        self._javi("Grupa %s: %s." % (g, ("rok provere %d dana" % n) if n else "bez roka provere"))
+
+    def parcele_isteklog_roka(self):
+        rokovi = self.baza.rokovi()
+        return [p for p in self.baza.parcele() if aktivan(p) and p["grupa"] in rokovi and
+                istekao_rok(p, rokovi[p["grupa"]])]
+
+    def _ponudi_rok(self):
+        """Pri pokretanju (jednom): ako je kod neke grupe istekao rok provere, ponudi proveru tih parcela."""
+        if self.posao is not None or self._zadatak is not None:
+            self.root.after(60000, self._ponudi_rok)
+            return
+        try:
+            istekle = self.parcele_isteklog_roka()
+        except Exception:
+            upisi_dnevnik(traceback.format_exc())
+            return
+        if not istekle:
+            return
+        grupe = list(dict.fromkeys(p["grupa"] for p in istekle))
+        if messagebox.askyesno("Rok provere", "Istekao je rok provere za %s (grupe: %s).\nProveriti ih sada?" % (
+                br_parcela(len(istekle)), ", ".join(grupe[:6]) + (" ..." if len(grupe) > 6 else ""))):
+            self.proveri(False, ids=[p["id"] for p in istekle])
+
+    def izvestaj_promena(self, ids=None, naziv=None):
+        """Izveštaj o promenama (PDF za klijenta i CSV za Excel): grupa ili izabrane parcele, od datuma do danas."""
+        if ids is None:
+            sel = self.tree.selection()
+            if sel and sel[0].startswith("g:"):
+                ids = [int(c) for c in self.tree.get_children(sel[0])]
+                naziv = None if sel[0][2:] == BEZ_GRUPE else sel[0][2:]
+            else:
+                ids = self.izabrani_ids()
+        if not ids:
+            messagebox.showinfo("Izveštaj o promenama", "Izaberi grupu (klijenta) ili parcele u listi praćenja.")
+            return
+        parcele = self.baza.parcele(ids)
+        naziv = naziv or (parcele[0]["grupa"] if len({p["grupa"] for p in parcele}) == 1 and parcele[0]["grupa"]
+                          else br_parcela(len(parcele)))
+        pocetak = (dt.date.today() - dt.timedelta(days=30)).strftime("%d.%m.%Y")
+        t = simpledialog.askstring("Izveštaj o promenama", "%s: promene od datuma (dd.mm.gggg):" % naziv,
+                                   parent=self.root, initialvalue=pocetak)
+        if t is None:
+            return
+        od = citaj_datum(t)
+        if od is None:
+            messagebox.showwarning("Izveštaj o promenama", "Datum nije ispravan: %s" % t)
+            return
+        osnova = self.pdf_folder() or (self.baza.podesavanje("pdf_folder", "") or PDF_DIR)
+        put = filedialog.asksaveasfilename(
+            parent=self.root, title="Sačuvaj izveštaj o promenama", defaultextension=".pdf",
+            initialdir=osnova if os.path.isdir(osnova) else DIR, filetypes=[("PDF", "*.pdf")],
+            initialfile=ime_fajla("Promene %s od %s.pdf" % (naziv, od.strftime("%d.%m.%Y"))))
+        if not put:
+            return
+        html, redovi, n = izvestaj_promena(parcele, {p["id"]: self.baza.istorija(p["id"]) for p in parcele}, od,
+                                           naziv)
+        csv_put = os.path.splitext(put)[0] + ".csv"
+        with open(csv_put, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(IZVESTAJ_CSV_ZAGLAVLJE)
+            w.writerows(redovi)
+        self.log("Izveštaj o promenama %s (od %s): %s, sa promenom %d. Pravim PDF..." % (
+            naziv, od.strftime("%d.%m.%Y"), br_parcela(len(parcele)), n), "info")
+
+        def nit():
+            pregledac = nadji_pregledac()
+            gotov = None
+            try:
+                if pregledac:
+                    profil = tempfile.mkdtemp(prefix="katastar_izv_")
+                    try:
+                        izvor_html = os.path.join(profil, "izvestaj.html")
+                        with open(izvor_html, "w", encoding="utf-8") as f:
+                            f.write(html)
+                        if html_u_pdf(pregledac, izvor_html, put, profil):
+                            gotov = put
+                    finally:
+                        shutil.rmtree(profil, ignore_errors=True)
+                if gotov is None:             # bez Edge/Chrome: izveštaj kao HTML (otvara se u pregledaču)
+                    gotov = os.path.splitext(put)[0] + ".html"
+                    with open(gotov, "w", encoding="utf-8") as f:
+                        f.write(html)
+            except Exception:
+                upisi_dnevnik("IZVESTAJ: " + traceback.format_exc())
+            self.root.after(0, self._izvestaj_gotov, gotov, csv_put)
+        threading.Thread(target=nit, daemon=True).start()
+
+    def _izvestaj_gotov(self, put, csv_put):
+        if not put:
+            self.log("Izveštaj o promenama nije napravljen (vidi dnevnik).", "neuspeh")
+            return
+        self.log("Izveštaj o promenama: %s (i %s)" % (put, os.path.basename(csv_put)), "uspeh")
+        try:
+            os.startfile(put)
+        except (AttributeError, OSError):
+            pass
 
     def nova_grupa(self):
         n = simpledialog.askstring("Nova grupa", "Naziv grupe:", parent=self.root)
@@ -6918,13 +7119,15 @@ class App:
                                            "Izaberi samu parcelu (red) ako želiš da je proveriš.")
         return parcele or None
 
-    def proveri(self, samo_izabrane, neaktivni=False):
+    def proveri(self, samo_izabrane, neaktivni=False, ids=None):
         """samo_izabrane: izabrane u listi; neaktivni: samo odložene i arhivirane; inače "Proveri sve"
-        (bez odloženih i arhiviranih)."""
+        (bez odloženih i arhiviranih). v38: ids = baš te parcele (istekao rok provere)."""
         if self.posao:
             return
         preskoceno = []
-        if samo_izabrane:
+        if ids:
+            parcele = self.baza.parcele(ids)
+        elif samo_izabrane:
             parcele = self._izabrani_za_proveru()
             if not parcele:
                 return
