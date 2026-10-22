@@ -11,14 +11,18 @@
 ## Kako se radi
 - Izmene se prave ovde (Claude Code na GitHub-u). Program na Dejanovom računaru (`C:\Users\LENOVO\Desktop\Asistent_KATASTAR`) pri svakom pokretanju sam uradi `git pull` sa grane `main`, staru verziju sačuva u `rezerve/asistent_katastar_<hash>.py` i ponovo se pokrene. Zato izmena važi tek kad je na `main`.
 - Kad je izmena gotova i proverena: povećaj `VERZIJA` u `izvor.py`, dodaj komentar „# vN: …“ uz izmenjeni deo, sastavi program, commit (opis na srpskom, npr. „v34: ...“), pa push na `main`. Ako sesija mora da radi na posebnoj grani, otvori pull request ka `main` i reci Dejanu da ga spoji (Merge).
+- Program pre pokretanja nove verzije radi probni start na kopiji podataka i vraća staru ako ne prođe (v34); GitHub Actions (`.github/workflows/testovi.yml`) proverava svaki push i PR. Crven CI = ne spajati.
 - Sajt eKatastra nije dostupan iz oblaka: sve se proverava na `mock_sajt.py`. Za novo ponašanje sajta traži od Dejana HAR; captchu nikad ne rešavaj umesto njega.
 - Dejanov ekran je 1920x1080 na 150%; proveri i prikaz sa `TEST_UVECANJE=1.5`.
 - Kratki meniji (desni klik do ~6-8 stavki), bez dugih uputstava u prozorima.
 
 ## Podaci se ne smeju izgubiti
 - Prethodne verzije su u istoriji Git-a; na računaru ih program čuva i u `rezerve/`.
-- `katastar.db` nikad ne menjaj direktno: radi na kopiji. Pre izmene šeme program pravi rezervu u `rezerve/` (npr. `katastar_pre_vN.db`); uradi isto pri svakoj promeni šeme.
+- `katastar.db` nikad ne menjaj direktno: radi na kopiji. Promena šeme ide samo kao nova stavka u `MIGRACIJE` (`izvor.py`, broj u `PRAGMA user_version`); program pre nje sam pravi `rezerve/katastar_pre_vN.db`. Samo nove tabele/indeksi (ili kolona u `parcele`), da starija verzija posle vraćanja radi sa bazom.
 - U oblaku nema baze ni podataka klijenata. Za proveru testovi prave probnu bazu.
+
+## Zadaci preko Drive-a (v35)
+- Kad Dejan traži da se parcele iz ugovora ubace u program: zadatak (JSON, format u komentaru iznad `ucitaj_zadatak` u `izvor.py`) ide u Drive folder `ASISTENT KATASTAR/zadaci`; program ga sam preuzme, a izveštaj ostavi u `ASISTENT KATASTAR/zadaci/izvestaji`. Parcele koje su već u praćenju se podrazumevano preskaču (`"postojece"`).
 
 ## GitHub
 - Na GitHub ide samo ono što je na spisku u `.gitignore` (lista dozvoljenih). Nikad ne dodaji bazu, `zadaci/`, `izvodi/`, `PDF/`, `dnevnik.txt`, `sifarnik_ko.json`, `uzorci_captcha.json`, rezerve ni bilo šta sa podacima klijenata; ne koristi `git add -f`.
@@ -26,6 +30,6 @@
 
 ## Provera pre isporuke
 - `cd izvor && python napravi.py && python -m py_compile ../asistent_katastar.py`
-- Testovi: `izvor/sve_testove.sh` (Xvfb na :98 1600x1000 i :97 2880x1620 za 150%, python3 sa tkinter i requests). Brzo: `cd izvor && xvfb-run -a python3 test_logika.py`; svaki test na kraju ispiše `UKUPNO GRESAKA`.
+- Testovi: `izvor/sve_testove.sh` (sam podiže Xvfb :98 1600x1000, :97 2880x1620 za 150%, :96 i :95 za test_raspored; python3 sa tkinter i requests, npr. `PYTHON=python3.12`; u oblaku `apt-get install python3-tk python3-requests`). Brzo: `cd izvor && xvfb-run -a python3 test_logika.py`; svaki test na kraju ispiše `UKUPNO GRESAKA`.
 - Za novu funkciju dodaj test `izvor/test_<ime>.py` po uzoru na postojeće.
 - Na kraju reci šta je izmenjeno i koja je verzija.
