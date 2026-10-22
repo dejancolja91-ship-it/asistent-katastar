@@ -113,7 +113,7 @@ ok(app.tree.exists(s1) and app.tree.exists("g:Zgrada"), "parcele i grupa u listi
 app.tree.selection_set(s1)
 lst = meni(s1)
 print("     meni parcele:", lst)
-ok(lst == ["Proveri ovu parcelu", "Sačuvaj kao PDF", "Kopiraj broj parcele", "Izmeni (klijent, grupa, napomena)...",
+ok(lst == ["Proveri ovu parcelu", "Sačuvaj kao PDF", "Kopiraj broj parcele", "Izmeni (broj parcele, KO, klijent, grupa)...",
            "Označi kao pregledano", "Prati celu parcelu (sada samo: stan 56)", "---", "Odloži proveru ▸", "Arhiviraj",
            "---", "Ukloni iz praćenja"], "meni parcele: kratak (%d stavki umesto 13)" % stavki(lst))
 for izbaceno in ("Detalji", "Kopiraj ćeliju", "Kopiraj ceo red", "Premesti u grupu", "Proveri izabrane"):
@@ -126,7 +126,7 @@ izaberi("Kopiraj broj parcele")
 ok(root.clipboard_get().split()[-1] == "10383" and "\n" not in root.clipboard_get(),
    "Kopiraj broj parcele: %r" % root.clipboard_get())
 meni(s1)
-izaberi("Izmeni (klijent, grupa, napomena)...")
+izaberi("Izmeni (broj parcele, KO, klijent, grupa)...")
 ok(POZIVI[-1] == ("izmeni", (P["10383"],)), "Izmeni: ta parcela")
 meni(s1)
 izaberi("Označi kao pregledano")
@@ -151,7 +151,7 @@ ok(POZIVI[-1] == ("ukloni", (P["10383"],)), "Ukloni iz praćenja: ta parcela")
 # parcela bez promena i bez izabranih stavki
 app.tree.selection_set(s2)
 lst = meni(s2)
-ok(lst == ["Proveri ovu parcelu", "Sačuvaj kao PDF", "Kopiraj broj parcele", "Izmeni (klijent, grupa, napomena)...", "---",
+ok(lst == ["Proveri ovu parcelu", "Sačuvaj kao PDF", "Kopiraj broj parcele", "Izmeni (broj parcele, KO, klijent, grupa)...", "---",
            "Odloži proveru ▸", "Arhiviraj", "---", "Ukloni iz praćenja"], "obična parcela: %d stavki %s" % (stavki(lst), lst))
 # desni klik na neizabranu parcelu bira nju
 app.tree.selection_set(s2)

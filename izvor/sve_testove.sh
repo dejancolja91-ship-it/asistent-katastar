@@ -19,14 +19,14 @@ proveri() {   # ime_izlaza opis izlazni_kod
   echo "$2: ${r:-NIJE ZAVRSEN (izlazni kod $3)}"
   [ "$r" = "UKUPNO GRESAKA: 0" ] || { LOSE=1; tail -40 "$1"; }
 }
-for t in test_prati_celu test_sveze test_meni_liste test_skrol test_pracenje_stavke test_izbor test_nepokretnosti test_zamke test_logika test_grupe test_panel test_pdf test_prozor test_adresa test_zadaci test_azuriranje test_baza test_sumnjivo test_izvestaj test_uvoz; do
+for t in test_prati_celu test_sveze test_meni_liste test_skrol test_pracenje_stavke test_izbor test_nepokretnosti test_zamke test_logika test_grupe test_panel test_pdf test_prozor test_adresa test_zadaci test_azuriranje test_baza test_sumnjivo test_izvestaj test_uvoz test_izmena; do
   DISPLAY=:98 timeout 900 "$PY" $t.py > out_$t.txt 2>&1
   proveri out_$t.txt "$t" $?
 done
 env -u DISPLAY timeout 900 "$PY" test_raspored.py > out_test_raspored.txt 2>&1
 proveri out_test_raspored.txt test_raspored $?
 if [ -z "$KRATKO" ]; then
-  for t in test_prati_celu test_sveze test_skrol test_pracenje_stavke test_izbor test_prozor test_adresa test_zadaci test_uvoz test_izvestaj; do
+  for t in test_prati_celu test_sveze test_skrol test_pracenje_stavke test_izbor test_prozor test_adresa test_zadaci test_uvoz test_izvestaj test_izmena; do
     DISPLAY=:97 TEST_UVECANJE=1.5 timeout 900 "$PY" $t.py > out_${t}_150.txt 2>&1
     proveri out_${t}_150.txt "$t 150%" $?
   done

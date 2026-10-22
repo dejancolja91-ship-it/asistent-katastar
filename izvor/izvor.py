@@ -43,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v39"
+VERZIJA = "v40"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -1685,6 +1685,19 @@ class Baza:
             if grupa:
                 c.execute("INSERT OR IGNORE INTO grupe (naziv) VALUES (?)", (grupa,))
             return cur.rowcount > 0
+
+    def promeni_mesto(self, pid, opstina_id, opstina, ko_id, ko, broj):
+        """v40: ispravka pogrešno upisane parcele (KO ili broj). Sačuvano stanje i istorija promena pripadaju staroj
+        (pogrešnoj) parceli, pa se brišu; klijent, grupa i napomena ostaju. False ako je ta parcela već u praćenju."""
+        with self._con() as c:
+            if c.execute("SELECT 1 FROM parcele WHERE ko_id=? AND broj=? AND id<>?", (ko_id, broj, pid)).fetchone():
+                return False
+            c.execute("UPDATE parcele SET opstina_id=?, opstina=?, ko_id=?, ko=?, broj=?, snimak=NULL, provereno=NULL, "
+                      "promene=NULL, promena_vreme=NULL, pokusaj=NULL, greska=NULL, stavke=NULL WHERE id=?",
+                      (opstina_id, opstina, ko_id, ko, broj, pid))
+            c.execute("DELETE FROM istorija WHERE parcela_id=?", (pid,))
+            c.execute("DELETE FROM sumnjivo WHERE parcela_id=?", (pid,))
+        return True
 
     def parcela_po_mestu(self, ko_id, broj):
         with self._con() as c:
@@ -4064,7 +4077,7 @@ class App:
         mr.add_command(label="Detalji", command=self.detalji)
         mr.add_command(label="Kopiraj broj parcele (KO i broj)", command=lambda: self._kop_pracenja.kopiraj_brojeve())
         mr.add_command(label="Kopiraj izabrane redove (Ctrl+C)", command=lambda: self._kop_pracenja.kopiraj_redove())
-        mr.add_command(label="Izmeni (klijent, grupa, napomena)...", command=self.izmeni)
+        mr.add_command(label="Izmeni (broj parcele, KO, klijent, grupa)...", command=self.izmeni)
         mr.add_command(label="Označi kao pregledano", command=self.oznaci_pregledano)
         mr.add_command(label="Označi SVE kao pregledano", command=self.oznaci_sve_pregledano)
         mr.add_separator()
@@ -5738,7 +5751,7 @@ class App:
                 m.add_command(label="Kopiraj broj parcele" if n == 1 else "Kopiraj brojeve parcela (%d)" % n,
                               command=kop.kopiraj_brojeve)
             if len(ids) == 1:
-                m.add_command(label="Izmeni (klijent, grupa, napomena)...", command=self.izmeni)
+                m.add_command(label="Izmeni (broj parcele, KO, klijent, grupa)...", command=self.izmeni)
             else:
                 m.add_command(label="Premesti u grupu" + vise + "...", command=self.promeni_grupu)
             if any(p.get("promene") for p in sel):
@@ -5922,13 +5935,36 @@ class App:
             self.root.after(0, u_prozoru)
         napravi_precicu(gotovo)
 
-    def _dijalog_podataka(self, naslov, klijent="", grupa="", napomena=""):
+    def _dijalog_podataka(self, naslov, klijent="", grupa="", napomena="", mesto=None):
+        """Klijent, grupa, napomena. v40: mesto = parcela (jedna) - u prozoru su i opština, KO i broj parcele, da se
+        ispravi pogrešan unos; tada se vraća i (opstina_id, opstina, ko_id, ko, broj) ili None (mesto isto)."""
         d = tk.Toplevel(self.root)
         d.title(naslov)
         d.transient(self.root)
         d.grab_set()
         f = ttk.Frame(d, padding=12)
         f.pack(fill="both", expand=True)
+        if mesto is not None:
+            fm = ttk.Frame(f)
+            fm.grid(row=0, column=0, columnspan=2, sticky="we", pady=(0, px(8)))
+            ttk.Label(fm, text="Opština").grid(row=0, column=0, sticky="w")
+            ttk.Label(fm, text="Katastarska opština").grid(row=0, column=1, sticky="w")
+            ttk.Label(fm, text="Broj parcele").grid(row=0, column=2, sticky="w")
+            cb_o, cb_k, lbl_k = self._kombinacije_opstina(fm, 1, 0)
+            e_b = ttk.Entry(fm, width=12)
+            e_b.grid(row=1, column=2, sticky="w")
+            e_b.insert(0, mesto["broj"])
+            lbl_k.grid(row=2, column=0, columnspan=3, sticky="w")
+            i = next((j for j, o in enumerate(self.sif.opstine) if str(o[0]) == str(mesto["opstina_id"])), -1)
+            if i >= 0:
+                cb_o.current(i)
+                self._opstina_izabrana(cb_o, cb_k, lbl_k)
+            else:
+                cb_o.set(mesto["opstina"] or "")
+            cb_k.set(mesto["ko"] or "")
+            pocetno = (cb_o.get(), cb_k.get())
+            f = ttk.Frame(f)
+            f.grid(row=1, column=0, columnspan=2, sticky="we")
         ttk.Label(f, text="Klijent / naziv").grid(row=0, column=0, sticky="w")
         e_k = ttk.Entry(f, width=36)
         e_k.insert(0, klijent)
@@ -5944,7 +5980,25 @@ class App:
         rez = {}
 
         def ok(_=None):
-            rez["v"] = (e_k.get().strip(), cb.get().strip(), e_n.get().strip())
+            v = (e_k.get().strip(), cb.get().strip(), e_n.get().strip())
+            if mesto is not None:
+                broj = "".join(e_b.get().split())
+                if not BROJ_RE.match(broj):
+                    messagebox.showwarning(naslov, "Broj parcele nije ispravan: %s (npr. 10383 ili 10383/2)." % broj,
+                                           parent=d)
+                    return
+                if (cb_o.get(), cb_k.get()) == pocetno:
+                    novo = (mesto["opstina_id"], mesto["opstina"], mesto["ko_id"], mesto["ko"])
+                else:
+                    self._razresi_unos(cb_o, cb_k)
+                    o, k = self._izabrana_opstina(cb_o), self._izabrana_ko(cb_o, cb_k)
+                    if not o or not k:
+                        messagebox.showwarning(naslov, "Izaberi opštinu i katastarsku opštinu sa spiska.", parent=d)
+                        return
+                    novo = (o[0], o[1], k[0], k[1])
+                promenjeno = str(novo[2]) != str(mesto["ko_id"]) or broj != mesto["broj"]
+                v = v + ((novo + (broj,)) if promenjeno else None,)
+            rez["v"] = v
             d.destroy()
         ttk.Button(f, text="U redu", command=ok).grid(row=6, column=0, sticky="w")
         ttk.Button(f, text="Odustani", command=d.destroy).grid(row=6, column=1, sticky="e")
@@ -6089,6 +6143,30 @@ class App:
         ttk.Button(b, text="Odustani", command=d.destroy).pack(side="right")
         d.bind("<Escape>", lambda e: d.destroy())
 
+    def _promeni_mesto(self, p, novo):
+        """v40: KO ili broj parcele ispravljen. Postojeća parcela se ne duplira; stanje i istorija stare se brišu (uz
+        potvrdu), pa se nova odmah proverava. Vraća False ako je odustato."""
+        opstina_id, opstina, ko_id, ko, broj = novo
+        drugi = self.baza.parcela_po_mestu(ko_id, broj)
+        if drugi and drugi["id"] != p["id"]:
+            messagebox.showwarning("Izmeni parcelu", "%s %s je već u praćenju%s." % (
+                ko, broj, (" (grupa %s)" % drugi["grupa"]) if drugi["grupa"] else ""))
+            return False
+        if not messagebox.askyesno("Izmeni parcelu", "Umesto %s %s prati se %s %s.\nSačuvano stanje i istorija promena "
+                                   "za %s %s se brišu, a nova parcela se odmah proverava. Nastaviti?" % (
+                                       p["ko"], p["broj"], ko, broj, p["ko"], p["broj"])):
+            return False
+        if not self.baza.promeni_mesto(p["id"], opstina_id, opstina, ko_id, ko, broj):
+            messagebox.showwarning("Izmeni parcelu", "%s %s je već u praćenju." % (ko, broj))
+            return False
+        upisi_dnevnik("IZMENA PARCELE: %s %s (KO %s) -> %s %s (KO %s), klijent %s" % (
+            p["ko"], p["broj"], p["ko_id"], ko, broj, ko_id, p["klijent"]))
+        self.sesija_novo.pop(p["id"], None)
+        self.sesija_ok.discard(p["id"])
+        self._javi("Ispravljeno: %s %s -> %s %s." % (p["ko"], p["broj"], ko, broj))
+        self.root.after(200, lambda: self.proveri(False, ids=[p["id"]]))
+        return True
+
     def izmeni(self):
         ids = self.izabrani_ids()
         if not ids:
@@ -6097,9 +6175,14 @@ class App:
         p = stare[0]
         podaci = self._dijalog_podataka("Izmeni %s" % ("parcelu %s %s" % (p["ko"], p["broj"]) if len(ids) == 1
                                                          else "%d parcela" % len(ids)),
-                                        p["klijent"], p["grupa"], p["napomena"])
+                                        p["klijent"], p["grupa"], p["napomena"],
+                                        mesto=p if len(ids) == 1 else None)
         if podaci is None:
             return
+        if len(ids) == 1:                     # v40: ispravka pogrešno upisane KO ili broja parcele
+            podaci, novo = podaci[:3], podaci[3]
+            if novo and not self._promeni_mesto(p, novo):
+                return
         for pid in ids:
             self.baza.izmeni(pid, *podaci)
         klijent, grupa, _ = podaci
