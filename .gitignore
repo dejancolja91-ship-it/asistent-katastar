@@ -7,6 +7,9 @@
 
 !/.gitignore
 !/.gitattributes
+!/.github/
+!/.github/workflows/
+!/.github/workflows/*.yml
 !/README.md
 !/CLAUDE.md
 !/asistent_katastar.py

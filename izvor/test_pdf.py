@@ -11,7 +11,8 @@ import time
 
 RAD = tempfile.mkdtemp(prefix="kat_pdf_")
 os.environ["KATASTAR_TEST"] = "1"
-os.environ["KATASTAR_PREGLEDAC"] = "/opt/pw-browsers/chromium"
+PREGLEDAC = os.environ.get("KATASTAR_PREGLEDAC") or "/opt/pw-browsers/chromium"   # v34: u CI-u drugi put
+os.environ["KATASTAR_PREGLEDAC"] = PREGLEDAC
 import mock_sajt  # noqa: E402
 
 srv = mock_sajt.pokreni()
@@ -253,7 +254,7 @@ app.pdf_pracenja()
 ok(PORUKE and "Izaberi parcele" in PORUKE[-1][2], "praćenje bez izbora: poruka")
 
 # v30 (Dejan: "da celu grupu, npr za klijenta, SVE skinem kao pdf"): lista praćenja, grupa = klijent
-os.environ["KATASTAR_PREGLEDAC"] = "/opt/pw-browsers/chromium"
+os.environ["KATASTAR_PREGLEDAC"] = PREGLEDAC
 app.baza.postavi_podesavanje("pdf_nacin", "pitaj")
 for broj in ("1741/1", "1741/2", "1741/7"):
     app.baza.dodaj(70106, "ЧУКАРИЦА", 703702, "ЖЕЛЕЗНИК", broj, klijent="Klijent D", grupa="Klijent D")

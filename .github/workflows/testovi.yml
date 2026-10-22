@@ -1,0 +1,32 @@
+# v34: provera svake izmene pre nego što stigne na Dejanov računar (program pri pokretanju preuzima granu main)
+name: testovi
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  testovi:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python, tkinter, Xvfb
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q python3-tk python3-requests xvfb fonts-dejavu-core
+      - name: asistent_katastar.py je sastavljen iz izvor.py
+        run: |
+          cd izvor && python3 napravi.py && cd ..
+          git diff --exit-code asistent_katastar.py || (echo "Pokreni: cd izvor && python napravi.py" && exit 1)
+          python3 -m py_compile asistent_katastar.py
+      - name: testovi (100% i 150%)
+        env:
+          PYTHON: python3
+          KATASTAR_PREGLEDAC: /usr/bin/google-chrome
+        run: bash izvor/sve_testove.sh
+      - name: izlazi testova
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: izlazi-testova
+          path: izvor/out_*.txt
