@@ -41,6 +41,11 @@ def nepokretnost(vrsta):
         teret = ('<table><tbody class="print_group"><tr><td class="print_form_item_v"><strong>Опис:</strong></td>'
                  '<td class="print_form_item_v"><span>%s</span></td></tr></tbody></table>' % STANJE["teret"])
         t = t.replace('<p class="body_text">*** Нема терета ***</p>', teret, 1)
+    if STANJE.get("bez_vlasnika"):         # v37: okrnjena stranica (sajt pod opterećenjem): blok vlasnika prazan
+        i = t.find("getNosiociPravaNaParceli_lblCaption")
+        j = t.find("lblCaption", i + 40)
+        if i >= 0 and j > i:
+            t = t[:i] + re.sub(r'<tbody class="print_group">.*?</tbody>', "", t[i:j], flags=re.S) + t[j:]
     if STANJE["napomena"]:
         nap = ('<tbody class="print_group"><tr><td class="print_form_item_v"><strong>Опис:</strong></td>'
                '<td class="print_form_item_v"><span>%s</span></td></tr></tbody>' % STANJE["napomena"])

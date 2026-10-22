@@ -43,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v36"
+VERZIJA = "v37"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -1040,6 +1040,26 @@ def napravi_snimak(rez):
     }
 
 
+def sumnjiv_snimak(stari, novi, sveze_nep=()):
+    """v37: odgovor sajta koji izgleda nepotpuno (sajt pod opterećenjem vrati okrnjenu stranicu) - takva provera ne
+    sme da postane "promena" koja ode klijentu. Vraća razlog ili None. sveze_nep = podaci o nepokretnosti koji su
+    stvarno skinuti u ovoj proveri (stari se inače prepisuju u novi snimak)."""
+    if not stari or not novi:
+        return None
+    if stari.get("delovi") and not novi.get("delovi"):
+        return "sajt nije vratio delove parcele (ranije %d)" % len(stari["delovi"])
+    if len(stari.get("posebni") or []) >= 3 and not novi.get("posebni") and novi.get("objekti"):
+        return "zgrade su tu, a nema nijednog posebnog dela (ranije %d)" % len(stari["posebni"])
+    if "parcela" in sveze_nep and ista_nep_verzija(stari, novi) and vlasnici_tereti(stari)[0] and \
+            not vlasnici_tereti(novi)[0]:
+        return "nema vlasnika parcele (ranije: %s)" % vlasnici_tereti(stari)[0][:80]
+    return None
+
+
+def otisak_snimka(sn):
+    return hashlib.sha1(json.dumps(sn, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def ista_nep_verzija(stari, novi):
     """Podaci o nepokretnosti iz starije verzije programa zapisani su drugacije - ne porede se."""
     return (stari or {}).get("nep_v") == (novi or {}).get("nep_v")
@@ -1575,7 +1595,12 @@ def _mig_rok_grupe(c):
 # rezerve/katastar_pre_vN.db (N = verzija programa koja menja šemu). Nova promena = nova stavka na kraju spiska.
 # Samo NOVE tabele i indeksi (ili kolona u parcele): ako se program vrati na stariju verziju (v34), ona mora da radi
 # sa novom bazom - zato se postojeće tabele ne menjaju (npr. INSERT INTO grupe VALUES (?) u starijim verzijama).
-MIGRACIJE = [(1, "v36", _mig_rok_grupe)]
+def _mig_sumnjivo(c):
+    """v37: sumnjiv odgovor sajta (otisak) - isti odgovor u dve uzastopne provere se prihvata kao pravo stanje."""
+    c.execute("CREATE TABLE IF NOT EXISTS sumnjivo (parcela_id INTEGER PRIMARY KEY, otisak TEXT, vreme TEXT)")
+
+
+MIGRACIJE = [(1, "v36", _mig_rok_grupe), (2, "v37", _mig_sumnjivo)]
 
 
 class Baza:
@@ -1828,6 +1853,17 @@ class Baza:
                 c.execute("UPDATE parcele SET snimak=? WHERE id=?", (json.dumps(sn, ensure_ascii=False), pid))
             return len(novo)
 
+    def sumnjivo_ponovljeno(self, pid, otisak):
+        """v37: True ako je isti sumnjiv odgovor stigao i u prethodnoj proveri (onda je to stvarno stanje na sajtu);
+        inače se pamti i vraća False."""
+        with self._con() as c:
+            r = c.execute("SELECT otisak FROM sumnjivo WHERE parcela_id=?", (pid,)).fetchone()
+            if r and r["otisak"] == otisak:
+                c.execute("DELETE FROM sumnjivo WHERE parcela_id=?", (pid,))
+                return True
+            c.execute("INSERT OR REPLACE INTO sumnjivo VALUES (?,?,?)", (pid, otisak, sada()))
+            return False
+
     def obradi(self, p, snimak, mapa=None):
         """Upisuje novu proveru. Vraca (prva, promene). mapa (v22): prate se samo te stavke
         ({ključ u starom snimku: ključ sada}) - samo one se porede, a ključevi se pamte kako se sada zovu."""
@@ -1839,6 +1875,7 @@ class Baza:
                 stari = None
         promene = (poredi_stavke(stari, snimak, mapa) if mapa else poredi(stari, snimak)) if stari else []
         with self._con() as c:
+            c.execute("DELETE FROM sumnjivo WHERE parcela_id=?", (p["id"],))     # v37
             if promene:
                 tekst = "\n".join(promene)
                 pre = c.execute("SELECT promene FROM parcele WHERE id=?", (p["id"],)).fetchone()
@@ -7014,6 +7051,22 @@ class App:
                 for k, k2 in (mapa or {}).items():    # preimenovana praćena stavka: stari naziv ne ostaje u snimku
                     if k2 and k2 != k and k2 in podaci.get("nepokretnost", {}):
                         sn["nepokretnost"].pop(k, None)
+            sumnja = sumnjiv_snimak(stari_sn, sn, podaci.get("nepokretnost") or {})
+            if sumnja and not self.baza.sumnjivo_ponovljeno(p["id"], otisak_snimka(sn)):
+                # v37: okrnjen odgovor sajta ne postaje promena; stanje ostaje staro. Ako isti odgovor stigne i u
+                # sledećoj proveri, prihvata se kao pravo stanje (npr. zgrada stvarno srušena).
+                razlog = "sumnjiv odgovor sajta: %s - stanje nije menjano, proveri ponovo" % sumnja
+                self.baza.zabelezi_neuspeh(p["id"], razlog)
+                self.log("%s: %s" % (naslov, razlog), "neuspeh")
+                if self.posao is not None:
+                    self.posao.ok -= 1
+                    self.posao.neuspeli.append((naslov, razlog))
+                if z.get("zadatak") and self._zadatak is not None:
+                    self._zadatak["provera"][p["id"]] = razlog
+                if ceka:
+                    ceka["rez"] = ("nije", razlog)
+                self.osvezi_listu()
+                return
             prva, promene = self.baza.obradi(p, sn, mapa)
             if ceka:
                 ceka["rez"] = ("prva",) if prva else ("promena", promene) if promene else ("ok",)
