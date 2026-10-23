@@ -10,6 +10,7 @@ import tempfile
 import time
 
 POSTAVKE = [  # ekran (DISPLAY), Windows uvecanje, velicina prikaza, ocekivana SKALA, najmanje mesta u tabeli
+    (":96", 1920, 1080, 1.5, "podrazumevano", 1.5, 7),    # v41: bez podešavanja - kao u Windows-u (kao PRO)
     (":96", 1920, 1080, 1.5, "auto", 1.25, 10),
     (":96", 1920, 1080, 1.5, "windows", 1.5, 7),
     (":96", 1920, 1080, 1.25, "auto", 1.25, 10),
@@ -71,8 +72,11 @@ def osvezi(n=4):
 
 root = ak.tk.Tk()
 root.tk.call("tk", "scaling", 96.0 * U / 72.0)
-if VEL != "auto":
+if VEL != "podrazumevano":                 # izričit izbor iz menija (posle jednokratnog prelaska v41)
     ak.Baza().postavi_podesavanje("velicina", VEL)
+    ak.Baza().postavi_podesavanje("velicina_v41", "1")
+else:                                      # kao da je ranije bilo izabrano "prilagođena ekranu" (pre v41)
+    ak.Baza().postavi_podesavanje("velicina", "auto")
 app = ak.App(root)
 ok(abs(ak.SKALA - OCEK) < 0.02 and abs(ak.SKALA_WINDOWS - U) < 0.02,
    "program crta na %s (Windows %s)" % (ak.SKALA, ak.SKALA_WINDOWS))
