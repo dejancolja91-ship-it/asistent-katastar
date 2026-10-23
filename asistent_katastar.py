@@ -43,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v41"
+VERZIJA = "v42"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -61,7 +61,10 @@ BEZ_GRUPE = "(bez grupe)"
 PRIKAZI = ("Sve parcele", "Promena u ovoj sesiji", "Nepregledano (promena od ranije)",
            "Nije provereno / nije uspelo", "Provereno u ovoj sesiji", "Odložena provera", "Arhiva")
 MAX_SIRINA_KOLONE = 900               # automatska sirina kolone ne ide preko ovoga (rucno moze sire)
-MAX_KOLONE = {"nacin": 340, "objekti": 300, "vlasnici": 460, "status": 320, "promena": 460, "provereno": 380}
+MAX_KOLONE = {"nacin": 340, "objekti": 300, "vlasnici": 460, "status": 320, "promena": 460, "provereno": 380,
+              # v42 (Dejan: "smanji kolonu klijent/grupa, da mi stanu svi podaci"): duga napomena ili "prati se
+              # samo" više ne gura ostale kolone van ekrana (ranije do 900, na 150% to je 1350 piksela)
+              "#0": 360}
 BOJA_OK, BOJA_NEUSPEH = "#17663a", "#c21f1f"
 # kao u Asistent PRO: jarko zuto = promena nadjena u ovoj sesiji (ceo red, dok je program otvoren);
 # podebljano bez boje = promena od ranije, nepregledana; zelena celija "Provera" = provereno u ovoj sesiji
