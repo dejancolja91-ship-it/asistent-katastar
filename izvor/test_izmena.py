@@ -216,6 +216,15 @@ u_dijalogu(lambda polja: nadjeno.update(n=len(polja["combo"]), e=len(polja["entr
 app.izmeni()
 ok(nadjeno.get("n") == 1 and nadjeno.get("e") == 2, "više parcela: samo klijent, grupa, napomena (%s)" % nadjeno)
 
+# --- v42: kolona Klijent / grupa ne gura ostale kolone van ekrana ---
+b.dodaj(70106, "ВОЖДОВАЦ", 703800, "КУМОДРАЖ", "777", klijent="EURO ROAD 111 D.O.O. BEOGRAD-NOVI BEOGRAD",
+        grupa="", napomena="Спасић Бобан - уговор о купопродаји (нацрт од 22.10.2026), рок за исплату 30 дана")
+app.prikaz_var.set(ak.PRIKAZI[0])
+app.osvezi_listu()
+root.update()
+sir = int(app.tree.column("#0", "width"))
+ok(sir <= ak.px(360) and sir >= ak.px(200), "kolona Klijent / grupa najviše 360 (%d px, granica %d)" % (sir, ak.px(360)))
+
 root.destroy()
 srv.shutdown()
 shutil.rmtree(RAD, ignore_errors=True)
