@@ -43,7 +43,7 @@ import requests
 # ----------------------------------------------------------------------
 # Konfiguracija
 # ----------------------------------------------------------------------
-VERZIJA = "v40"
+VERZIJA = "v41"
 BASE = os.environ.get("KATASTAR_BASE", "https://katastar.rgz.gov.rs/eKatastarPublic/")
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
@@ -2416,6 +2416,7 @@ class Pretraga(Posao):
 SKALA = 1.0                 # uvecanje po kome program crta (1.25 = 125%); postavlja se pri pokretanju
 SKALA_WINDOWS = 1.0         # uvecanje podeseno u Windowsu
 MIN_VISINA = 864            # najmanja visina ekrana (u tackama pri 100%) da tabela i panel budu pregledni
+VELICINA_PODRAZUMEVANO = "windows"   # v41: kao u Windows-u (ranije "auto" = prilagođena ekranu)
 
 
 def px(n):
@@ -3976,7 +3977,12 @@ class App:
         self.root = root
         napravi_rezervu_baze()
         self.baza = Baza()
-        postavi_skalu(root, self.baza.podesavanje("velicina", "auto"))  # 125%, 150%...: pikseli rastu sa slovima
+        # v41 (Dejan: "povećaj prikaz da bude kao na PRO, da sve bude veće"): podrazumevano kao u Windows-u (150% na
+        # laptopu); "prilagođena ekranu" (125%, više redova u tabeli) ostaje izbor u Prikaz > Veličina prikaza
+        if not self.baza.podesavanje("velicina_v41"):     # jednom, i ako je ranije izabrano "prilagođena ekranu"
+            self.baza.postavi_podesavanje("velicina", "windows")
+            self.baza.postavi_podesavanje("velicina_v41", "1")
+        postavi_skalu(root, self.baza.podesavanje("velicina", VELICINA_PODRAZUMEVANO))  # pikseli rastu sa slovima
         self.sif = Sifarnik()
         self.citac = CitacCaptche()
         self.posao = None
@@ -4118,7 +4124,7 @@ class App:
         mv.add_command(label="Širine kolona po sadržaju",
                        command=lambda: [self._prilagodi_kolone(t, sve=True) for t in (self.tree, self.tree_p)])
         mv.add_separator()
-        self.velicina_var = tk.StringVar(value=self.baza.podesavanje("velicina", "auto"))
+        self.velicina_var = tk.StringVar(value=self.baza.podesavanje("velicina", VELICINA_PODRAZUMEVANO))
         mv.add_radiobutton(label="Veličina prikaza: prilagođena ekranu (više mesta za tabelu)",
                            variable=self.velicina_var, value="auto", command=self._promeni_velicinu)
         mv.add_radiobutton(label="Veličina prikaza: kao u Windows-u (%d%%, veća slova)" % round(SKALA_WINDOWS * 100),
